@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Podešavanja v18.6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        SINET.Theme.apply(); 
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: sans-serif; }
+        .tab-btn { border-bottom: 3px solid transparent; color: #64748b; font-weight: 600; padding: 1rem 1.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; transition: all 0.2s; }
+        .tab-btn:hover { color: #4f46e5; }
+        .tab-btn.active { border-bottom-color: #6366f1; color: #4f46e5; font-weight: 800; }
+        .input-box { width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; outline: none; transition: border 0.2s; font-size: 0.95rem; }
+        .input-box:focus { border-color: #6366f1; ring: 2px solid #e0e7ff; }
+        .label-text { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.25rem; display: block; }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <div class="bg-[#1a1c2e] text-white px-6 py-4 flex justify-between items-center shadow-md shrink-0">
+        <div class="flex items-center gap-4">
+            <button onclick="window.location.href='index.html'" class="hover:text-slate-300"><span class="material-icons-round">arrow_back</span></button>
+            <div>
+                <h1 class="text-xl font-bold">Podešavanja</h1>
+                <p class="text-[10px] text-slate-400 tracking-widest">SINET ERP V18.6</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('modal-test').classList.remove('hidden')" class="bg-[#a855f7] hover:bg-[#9333ea] text-white px-5 py-2 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition transform active:scale-95">
+                <span class="material-icons-round text-sm">science</span> TEST
+            </button>
+            <button onclick="SINET.System.nuke()" class="bg-white/10 hover:bg-red-500 hover:text-white text-slate-400 p-2 rounded-full transition">
+                <span class="material-icons-round text-sm">delete</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white border-b border-slate-200 px-4 flex overflow-x-auto shrink-0">
+        <button onclick="Settings.tab('firma')" id="btn-firma" class="tab-btn active">Firma</button>
+        <button onclick="Settings.tab('kontakt')" id="btn-kontakt" class="tab-btn">Kontakt</button>
+        <button onclick="Settings.tab('adresa')" id="btn-adresa" class="tab-btn">Adresa</button>
+        <button onclick="Settings.tab('racuni')" id="btn-racuni" class="tab-btn">Računi</button>
+        <button onclick="Settings.tab('dizajn')" id="btn-dizajn" class="tab-btn">Dizajn</button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+        <div class="max-w-4xl mx-auto space-y-6 pb-24">
+
+            <div id="tab-firma" class="tab-content">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div>
+                        <span class="label-text">Pun Naziv Firme</span>
+                        <input id="conf-name" class="input-box text-lg font-bold" placeholder="Moja Firma d.o.o.">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><span class="label-text">PIB</span><input id="conf-pib" class="input-box font-mono" placeholder="100..."></div>
+                        <div><span class="label-text">Matični Broj</span><input id="conf-mb" class="input-box font-mono" placeholder="200..."></div>
+                    </div>
+                    <div>
+                        <span class="label-text">Šifra Delatnosti</span>
+                        <input id="conf-code" class="input-box" placeholder="6201 - Računarsko programiranje">
+                    </div>
+                    <div>
+                        <span class="label-text">PDV Status</span>
+                        <select id="conf-pdv" class="input-box bg-white font-bold">
+                            <option value="true">✅ U Sistemu PDV-a</option>
+                            <option value="false">❌ Van Sistema PDV-a</option>
+                        </select>
+                    </div>
+                    <div class="bg-indigo-50 text-indigo-700 text-xs p-3 rounded-lg border border-indigo-100 mt-2">
+                        Info: Ovi podaci se automatski pojavljuju na svim fakturama i otpremnicama.
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-kontakt" class="tab-content hidden">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div><span class="label-text">Email</span><input id="conf-email" class="input-box" placeholder="info@firma.rs"></div>
+                    <div><span class="label-text">Web Sajt</span><input id="conf-web" class="input-box" placeholder="www.firma.rs"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><span class="label-text">Telefon (Fiksni)</span><input id="conf-phone" class="input-box" placeholder="011/..."></div>
+                        <div><span class="label-text">Fax</span><input id="conf-fax" class="input-box" placeholder="-"></div>
+                    </div>
+
+                    <div class="bg-green-50 p-6 rounded-xl border border-green-100 mt-4">
+                        <h4 class="text-xs font-bold text-green-700 uppercase mb-3">Mobilni & Aplikacije</h4>
+                        <div><span class="label-text text-green-600">Broj Mobilnog</span><input id="conf-mobile" class="input-box border-green-200 focus:border-green-500" placeholder="063/..."></div>
+                        <div class="flex gap-6 mt-4">
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="check-viber" class="w-4 h-4 text-purple-600 rounded"> <span class="text-sm font-bold text-slate-600">Viber</span></label>
+                            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="check-wa" class="w-4 h-4 text-green-600 rounded"> <span class="text-sm font-bold text-slate-600">WhatsApp</span></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-adresa" class="tab-content hidden">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div><span class="label-text">Ulica i Broj</span><input id="conf-street" class="input-box" placeholder="Bulevar..."></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><span class="label-text">Stan</span><input id="conf-apt" class="input-box" placeholder="-"></div>
+                        <div><span class="label-text">PTT Broj</span><input id="conf-zip" class="input-box" placeholder="21000"></div>
+                    </div>
+                    <div><span class="label-text">Mesto (Grad)</span><input id="conf-city" class="input-box" placeholder="Novi Sad"></div>
+                    <div><span class="label-text">Država</span><input id="conf-country" class="input-box" value="Srbija"></div>
+                </div>
+            </div>
+
+            <div id="tab-racuni" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-2 border-yellow-200 bg-yellow-50/20">
+                    <div class="flex items-center gap-2 mb-4"><span class="material-icons-round text-yellow-600 text-sm">star</span> <span class="text-xs font-bold text-yellow-700 uppercase">GLAVNI RAČUN</span></div>
+                    <div class="space-y-4">
+                        <input id="conf-acc" class="input-box font-mono text-xl font-bold bg-white" placeholder="160-00000...">
+                        <input id="conf-bank" class="input-box bg-white" placeholder="Naziv Banke">
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 opacity-75">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase mb-4">SEKUNDARNI RAČUN</h4>
+                    <div class="space-y-4">
+                        <input id="conf-acc2" class="input-box font-mono text-sm" placeholder="XXX-XXXXXXX-XX">
+                        <input id="conf-bank2" class="input-box" placeholder="Naziv Banke">
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <span class="label-text">Tekst u podnožju (Napomene)</span>
+                    <textarea id="conf-footer" class="input-box h-24" placeholder="Hvala na poverenju."></textarea>
+                </div>
+            </div>
+
+            <div id="tab-dizajn" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-6">
+                    <div id="preview-logo" class="w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400 text-center p-2 overflow-hidden">NEMA LOGA</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-slate-800">Logo Firme</h4>
+                        <p class="text-xs text-slate-400 mb-3">Prikazuje se u zaglavlju fakture.</p>
+                        <input type="file" id="file-logo" class="hidden" accept="image/*" onchange="Settings.uploadImage(this, 'conf-logo-data', 'preview-logo')">
+                        <button onclick="document.getElementById('file-logo').click()" class="bg-[#1e293b] text-white px-6 py-2 rounded-lg text-xs font-bold uppercase w-full hover:bg-black transition">UPLOAD LOGO</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-6">
+                    <div id="preview-sign" class="w-24 h-24 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400 text-center p-2 overflow-hidden">NEMA POTPISA</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-slate-800">Pečat i Potpis</h4>
+                        <p class="text-xs text-slate-400 mb-3">Skenirana slika pečata.</p>
+                        <input type="file" id="file-sign" class="hidden" accept="image/*" onchange="Settings.uploadImage(this, 'conf-sign-data', 'preview-sign')">
+                        <button onclick="document.getElementById('file-sign').click()" class="bg-[#6d28d9] text-white px-6 py-2 rounded-lg text-xs font-bold uppercase w-full hover:bg-[#5b21b6] transition">UPLOAD PEČAT</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 p-4 flex justify-center z-20">
+        <button onclick="Settings.save()" class="bg-[#4f46e5] hover:bg-[#4338ca] text-white w-full max-w-md py-3 rounded-xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition transform active:scale-95">
+            <span class="material-icons-round">save</span> SAČUVAJ PODATKE
+        </button>
+    </div>
+
+    <div id="modal-test" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600"><span class="material-icons-round">science</span></div>
+            <h3 class="text-lg font-bold mb-2">Generator Podataka</h3>
+            <p class="text-xs text-slate-500 mb-6">Izaberi koliko lažnih faktura želiš za testiranje:</p>
+            
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="Settings.runSeed(20)" class="p-3 border rounded-xl hover:bg-slate-50 text-sm font-bold">20</button>
+                <button onclick="Settings.runSeed(100)" class="p-3 border rounded-xl hover:bg-slate-50 text-sm font-bold">100</button>
+                <button onclick="Settings.runSeed(500)" class="p-3 border rounded-xl hover:bg-slate-50 text-sm font-bold">500</button>
+                <button onclick="Settings.runSeed(1000)" class="p-3 border rounded-xl hover:bg-slate-50 text-sm font-bold">1000</button>
+            </div>
+            
+            <button onclick="document.getElementById('modal-test').classList.add('hidden')" class="text-slate-400 text-xs font-bold uppercase hover:text-slate-600">Otkaži</button>
+        </div>
+    </div>
+
+    <script>
+        const Settings = {
+            data: {}, // Local state
+
+            init: () => {
+                const c = SINET.Config.load();
+                Settings.data = c; // Load existing config
+
+                // MAPPING FIELDS
+                const setValue = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ""; };
+                
+                // Firma
+                setValue('conf-name', c.firma.naziv);
+                setValue('conf-pib', c.firma.pib);
+                setValue('conf-mb', c.firma.mb);
+                setValue('conf-code', c.firma.sifra_delatnosti);
+                setValue('conf-pdv', c.system.pdv_obveznik);
+
+                // Kontakt
+                setValue('conf-email', c.kontakt.email);
+                setValue('conf-web', c.kontakt.web);
+                setValue('conf-phone', c.kontakt.telefon);
+                setValue('conf-fax', c.kontakt.fax);
+                setValue('conf-mobile', c.kontakt.mobilni);
+                if(c.kontakt.viber) document.getElementById('check-viber').checked = true;
+                if(c.kontakt.whatsapp) document.getElementById('check-wa').checked = true;
+
+                // Adresa
+                setValue('conf-street', c.adresa.ulica);
+                setValue('conf-apt', c.adresa.stan);
+                setValue('conf-zip', c.adresa.ptt);
+                setValue('conf-city', c.adresa.mesto);
+                setValue('conf-country', c.adresa.drzava);
+
+                // Računi
+                setValue('conf-acc', c.banka.racun1);
+                setValue('conf-bank', c.banka.banka1);
+                setValue('conf-acc2', c.banka.racun2);
+                setValue('conf-bank2', c.banka.banka2);
+                setValue('conf-footer', c.banka.footer_text);
+
+                // Dizajn (Slike)
+                if(c.vizual.logo_data) document.getElementById('preview-logo').innerHTML = `<img src="${c.vizual.logo_data}" class="w-full h-full object-contain">`;
+                if(c.vizual.sign_data) document.getElementById('preview-sign').innerHTML = `<img src="${c.vizual.sign_data}" class="w-full h-full object-contain">`;
+            },
+
+            tab: (name) => {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById('tab-' + name).classList.remove('hidden');
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                document.getElementById('btn-' + name).classList.add('active');
+            },
+
+            // --- FILE UPLOAD LOGIC (Base64) ---
+            uploadImage: (input, storageKey, previewId) => {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    Settings.data.vizual = Settings.data.vizual || {};
+                    Settings.data.vizual[storageKey.replace('conf-','').replace('-','_')] = base64; // dirty hack mapping
+                    // Update preview
+                    document.getElementById(previewId).innerHTML = `<img src="${base64}" class="w-full h-full object-contain">`;
+                };
+                reader.readAsDataURL(file);
+            },
+
+            save: () => {
+                // Collect Data
+                const d = {
+                    firma: {
+                        naziv: document.getElementById('conf-name').value,
+                        pib: document.getElementById('conf-pib').value,
+                        mb: document.getElementById('conf-mb').value,
+                        sifra_delatnosti: document.getElementById('conf-code').value
+                    },
+                    kontakt: {
+                        email: document.getElementById('conf-email').value,
+                        web: document.getElementById('conf-web').value,
+                        telefon: document.getElementById('conf-phone').value,
+                        fax: document.getElementById('conf-fax').value,
+                        mobilni: document.getElementById('conf-mobile').value,
+                        viber: document.getElementById('check-viber').checked,
+                        whatsapp: document.getElementById('check-wa').checked
+                    },
+                    adresa: {
+                        ulica: document.getElementById('conf-street').value,
+                        stan: document.getElementById('conf-apt').value,
+                        ptt: document.getElementById('conf-zip').value,
+                        mesto: document.getElementById('conf-city').value,
+                        drzava: document.getElementById('conf-country').value
+                    },
+                    banka: {
+                        racun1: document.getElementById('conf-acc').value,
+                        banka1: document.getElementById('conf-bank').value,
+                        racun2: document.getElementById('conf-acc2').value,
+                        banka2: document.getElementById('conf-bank2').value,
+                        footer_text: document.getElementById('conf-footer').value
+                    },
+                    system: {
+                        pdv_obveznik: document.getElementById('conf-pdv').value
+                    },
+                    // KEEP EXISTING IMAGES IF NOT CHANGED
+                    vizual: {
+                        logo_data: (Settings.data.vizual && Settings.data.vizual.logo_data) || "",
+                        sign_data: (Settings.data.vizual && Settings.data.vizual.sign_data) || ""
+                    }
+                };
+
+                SINET.Config.save(d);
+            },
+            
+            runSeed: (n) => {
+                document.getElementById('modal-test').classList.add('hidden');
+                SINET.System.seed(n);
+            }
+        };
+        Settings.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="sr" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET ERP v16.1</title>
+    <link rel="manifest" href="manifest.json">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="apple-mobile-web-app-title" content="SINET ERP">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }; 
+        SINET.Theme.apply(); 
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { transition: background-color 0.3s; }
+        /* Dark Mode */
+        .dark body { background-color: #0f172a; }
+        .dark aside, .dark #mobile-header { background-color: #1e293b; border-color: #334155; }
+        .dark .bg-white { background-color: #1e293b !important; color: #e2e8f0; border-color: #334155; }
+        .dark .text-slate-800 { color: #f8fafc !important; }
+        .dark .text-slate-600 { color: #cbd5e1 !important; }
+        .dark .nav-link:hover:not(.active) { background-color: #334155; }
+        
+        /* Mobile Menu Transition */
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .menu-open { transform: translateX(0) !important; }
+        .menu-closed { transform: translateX(-100%); }
+        @media (min-width: 1024px) { .menu-closed { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen overflow-hidden flex flex-col lg:flex-row">
+
+    <div id="overlay" onclick="toggleMenu()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <div id="mobile-header" class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleMenu()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 hover:bg-slate-200">
+                <span class="material-icons-round">menu</span>
+            </button>
+            <h1 class="text-lg font-black italic tracking-tighter text-slate-800">SINET <span class="text-blue-600">ERP</span></h1>
+        </div>
+        <button onclick="SINET.Theme.toggle()" class="p-2 rounded-full text-slate-500"><span class="material-icons-round">dark_mode</span></button>
+    </div>
+
+    <aside id="sidebar" class="menu-closed fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 h-full z-40 flex flex-col lg:static shadow-2xl lg:shadow-none">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black italic tracking-tighter text-slate-800">SINET <span class="text-blue-600">ERP</span></h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">v16.1 Ops</p>
+            </div>
+            <button onclick="toggleMenu()" class="lg:hidden text-slate-400"><span class="material-icons-round">close</span></button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+            <p class="text-[10px] font-bold text-slate-400 uppercase ml-3 mb-2 mt-2">Glavno</p>
+            <a href="index.html" class="nav-link active flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-white bg-blue-600 shadow-lg"><span class="material-icons-round">dashboard</span> Kontrolna Tabla</a>
+            <a href="12_tasks_v16.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round text-amber-500">check_circle</span> Zadaci (Tasks)</a>
+            <a href="04_invoice_v7.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">receipt_long</span> Nova Faktura</a>
+            <a href="10_quotes_v14.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">topic</span> Ponude</a>
+
+            <p class="text-[10px] font-bold text-slate-400 uppercase ml-3 mb-2 mt-4">Poslovanje</p>
+            <a href="06_finance_v7.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">account_balance_wallet</span> Finansije</a>
+            <a href="09_expenses_v11.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">trending_down</span> Troškovi</a>
+            <a href="11_recurring_v15.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">autorenew</span> Automatika</a>
+            
+            <p class="text-[10px] font-bold text-slate-400 uppercase ml-3 mb-2 mt-4">Sistem</p>
+            <a href="02_clients_v7.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">groups</span> Partneri</a>
+            <a href="05_articles_v7.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">category</span> Katalog & Lager</a>
+            <a href="01_settings_v7.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600"><span class="material-icons-round">settings</span> Podešavanja</a>
+        </nav>
+        
+			<a href="13_audit_v17.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600">
+				<span class="material-icons-round text-red-600">security</span> Audit Log (Sigurnost)
+			</a>
+			
+			<a href="14_manual_v18.html" class="nav-link flex items-center gap-3 p-3 rounded-xl text-sm font-bold text-slate-600">
+				<span class="material-icons-round text-teal-600">menu_book</span> Uputstvo / Pomoć
+			</a>
+					
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700 hidden lg:block">
+            <button onclick="SINET.Theme.toggle()" class="w-full py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2">
+                <span class="material-icons-round text-sm">dark_mode</span> Promeni Temu
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 h-full overflow-y-auto relative w-full p-6 md:p-10">
+        
+        <div class="bg-gradient-to-r from-blue-900 to-slate-900 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <h1 class="text-lg font-bold text-blue-200 mb-6 uppercase tracking-widest">Finansijski Presek</h1>
+                    <p class="text-3xl md:text-5xl font-black tracking-tight" id="dash-profit">0.00 RSD</p>
+                    <p class="text-sm text-blue-300 mt-1">Neto Dobit</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 w-full md:w-64">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold uppercase text-amber-300">MOJI ZADACI</span>
+                        <span id="task-count" class="bg-amber-500 text-white text-[10px] font-bold px-1.5 rounded">0</span>
+                    </div>
+                    <div id="task-widget-list" class="space-y-1 text-xs text-slate-200">
+                        </div>
+                </div>
+            </div>
+            <div class="absolute -right-20 -top-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">BRZE AKCIJE</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="window.location.href='04_invoice_v7.html'" class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-blue-100 transition">
+                        <span class="material-icons-round text-blue-600">add</span> <span class="text-xs font-bold">Faktura</span>
+                    </button>
+                    <button onclick="window.location.href='12_tasks_v16.html'" class="bg-amber-50 dark:bg-amber-900/30 p-4 rounded-xl flex flex-col items-center gap-2 hover:bg-amber-100 transition">
+                        <span class="material-icons-round text-amber-600">check_circle</span> <span class="text-xs font-bold">Zadatak</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">PROMET</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-slate-600">Prihodi</span>
+                    <span id="dash-rev" class="font-mono font-bold text-green-600">0.00</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 mb-4"><div class="bg-green-500 h-2 rounded-full" style="width: 70%"></div></div>
+                
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-slate-600">Rashodi</span>
+                    <span id="dash-exp" class="font-mono font-bold text-red-500">0.00</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: 30%"></div></div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function toggleMenu() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('overlay');
+            sb.classList.toggle('menu-closed');
+            sb.classList.toggle('menu-open');
+            if (sb.classList.contains('menu-open')) {
+                ov.classList.remove('hidden');
+            } else {
+                ov.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Profit Logic
+            const docs = SINET.DB.get('docs') || [];
+            const expenses = SINET.DB.get('expenses') || [];
+            let rev = 0; docs.forEach(d => { if(d.type.includes('FAKTURA')) rev += SINET.Util.parseMoney(d.total); });
+            let exp = expenses.reduce((s,x) => s + x.amount, 0);
+            
+            document.getElementById('dash-rev').innerText = SINET.Util.fmtMoney(rev);
+            document.getElementById('dash-exp').innerText = SINET.Util.fmtMoney(exp);
+            document.getElementById('dash-profit').innerText = SINET.Util.fmtMoney(rev - exp) + " RSD";
+
+            // Task Widget Logic
+            const tasks = SINET.DB.get('tasks') || [];
+            const pending = tasks.filter(t => !t.done).slice(0, 3);
+            document.getElementById('task-count').innerText = tasks.filter(t=>!t.done).length;
+            
+            if(pending.length > 0) {
+                document.getElementById('task-widget-list').innerHTML = pending.map(t => `
+                    <div class="flex justify-between items-center border-b border-white/10 pb-1">
+                        <span class="truncate">${t.title}</span>
+                        <span class="font-mono text-[9px] opacity-70">${t.date.split('-')[2]}.${t.date.split('-')[1]}</span>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('task-widget-list').innerHTML = '<span class="italic opacity-50">Nema zadataka.</span>';
+            }
+        });
+    </script>
+    <script>
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('service-worker.js')
+			.then(() => console.log('SINET App Instalirana! 🚀'));
+		}
+	</script>
+		
+</body>
+</html>

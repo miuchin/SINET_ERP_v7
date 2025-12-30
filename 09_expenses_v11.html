@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Dobavljači v11.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #fff1f2; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .active-tab { border-bottom: 2px solid #e11d48; color: #e11d48; background: #fff0f1; }
+        .inactive-tab { color: #64748b; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <div class="bg-rose-900 text-white p-4 shadow-lg flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-rose-800">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <span class="material-icons-round text-rose-300">local_shipping</span> 
+                    DOBAVLJAČI & KUF
+                </h1>
+                <p class="text-[10px] text-rose-300 uppercase tracking-widest">SRM & Analitika Troškova</p>
+            </div>
+        </div>
+        <button onclick="SRM.newExpense()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2">
+            <span class="material-icons-round text-sm">add</span> Novi Račun
+        </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-white border-r border-slate-200 flex flex-col min-w-[300px]">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <input id="search-vendor" onkeyup="SRM.filter()" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-rose-500" placeholder="🔍 Traži dobavljača...">
+            </div>
+            <div id="vendor-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div class="w-2/3 bg-slate-50 flex flex-col relative overflow-y-auto hide-scroll">
+            
+            <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                <span class="material-icons-round text-6xl mb-4 text-slate-200">receipt_long</span>
+                <p>Izaberite dobavljača sa leve strane.</p>
+            </div>
+
+            <div id="vendor-content" class="hidden p-8 max-w-5xl mx-auto w-full">
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 id="v-name" class="text-3xl font-black text-slate-800">Naziv Dobavljača</h2>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white bg-rose-400">DOBAVLJAČ</span>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">UKUPNO PLAĆENO</p>
+                        <h2 id="v-total" class="text-3xl font-black text-rose-600">0.00 RSD</h2>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">BROJ FAKTURA</p>
+                        <p id="stat-count" class="text-lg font-bold text-slate-800">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">POSLEDNJA AKTIVNOST</p>
+                        <p id="stat-last" class="text-lg font-bold text-slate-800">-</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
+                    <div class="flex border-b border-slate-100">
+                        <button onclick="SRM.switchTab('history')" id="tab-btn-history" class="flex-1 p-3 text-xs font-bold active-tab">📄 ISTORIJA RAČUNA</button>
+                        <button onclick="SRM.switchTab('cats')" id="tab-btn-cats" class="flex-1 p-3 text-xs font-bold inactive-tab">📊 PO KATEGORIJAMA</button>
+                    </div>
+
+                    <div id="tab-history" class="p-0">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                                <tr><th class="p-3">Datum</th><th class="p-3">Ref (Broj)</th><th class="p-3">Kategorija</th><th class="p-3 text-right">Iznos</th><th class="p-3 w-8"></th></tr>
+                            </thead>
+                            <tbody id="v-history"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-cats" class="p-0 hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                                <tr><th class="p-3">Kategorija Troška</th><th class="p-3 text-right">Broj Računa</th><th class="p-3 text-right">Ukupan Iznos</th></tr>
+                            </thead>
+                            <tbody id="v-cats-stats"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-exp" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl animate-slide-up">
+            <h3 class="text-lg font-bold text-rose-900 mb-4 border-b border-rose-100 pb-2">KNJIŽENJE TROŠKA</h3>
+            <div class="space-y-3">
+                <input type="date" id="e-date" class="w-full p-2 border rounded-lg font-bold bg-slate-50">
+                
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400">DOBAVLJAČ</label>
+                    <input id="e-vendor" list="vendors-list" class="w-full p-3 border rounded-xl font-bold" placeholder="Izaberi ili upiši...">
+                    <datalist id="vendors-list"></datalist>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input id="e-ref" class="w-full p-2 border rounded-lg" placeholder="Broj računa (Ref)">
+                    <select id="e-cat" class="w-full p-2 border rounded-lg bg-white text-xs font-bold">
+                        <option>NABAVKA ROBE</option>
+                        <option>KANCELARIJSKI MAT.</option>
+                        <option>ZAKUP I REŽIJE</option>
+                        <option>GORIVO I PUTNI</option>
+                        <option>MARKETING</option>
+                        <option>OSTALO</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400">IZNOS (RSD)</label>
+                    <input type="number" id="e-amount" class="w-full p-3 border border-rose-300 rounded-xl font-mono text-xl font-bold text-rose-600" placeholder="0.00">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button onclick="SRM.save()" class="flex-1 bg-rose-600 text-white py-3 rounded-xl font-bold shadow-lg">SAČUVAJ</button>
+                <button onclick="document.getElementById('modal-exp').classList.add('hidden')" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">X</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SRM = {
+            expenses: [], vendors: [], selectedVendor: null,
+
+            init: () => {
+                SRM.expenses = SINET.DB.get('expenses') || [];
+                // Spajamo dobavljače iz Klijenata (CRM) i one koji su samo u Troškovima
+                const crmClients = SINET.DB.get('clients') || [];
+                const crmVendors = crmClients.filter(c => c.type === 'DOBAVLJAČ' || c.type === 'OBOJE').map(c => c.osnovno.naziv);
+                const expVendors = SRM.expenses.map(x => x.vendor);
+                
+                // Jedinstvena lista
+                SRM.vendors = [...new Set([...crmVendors, ...expVendors])].sort();
+                
+                // Popuni Datalist za Modal
+                document.getElementById('vendors-list').innerHTML = SRM.vendors.map(v => `<option value="${v}">`).join('');
+                
+                SRM.renderList(SRM.vendors);
+                document.getElementById('e-date').valueAsDate = new Date();
+            },
+
+            filter: () => {
+                const term = document.getElementById('search-vendor').value.toLowerCase();
+                const filtered = SRM.vendors.filter(v => v.toLowerCase().includes(term));
+                SRM.renderList(filtered);
+            },
+
+            renderList: (list) => {
+                const c = document.getElementById('vendor-list');
+                if(list.length===0) { c.innerHTML='<div class="p-4 text-center text-xs text-slate-400">Nema podataka.</div>'; return; }
+                
+                // Izračunaj totale za listu
+                const vendorStats = list.map(v => {
+                    const total = SRM.expenses.filter(x => x.vendor === v).reduce((s,x)=>s+x.amount,0);
+                    return { name: v, total: total };
+                });
+
+                c.innerHTML = vendorStats.map(v => {
+                    const active = SRM.selectedVendor === v.name ? 'bg-rose-50 border-l-4 border-rose-500' : 'hover:bg-slate-50 border-l-4 border-transparent';
+                    return `<div onclick="SRM.select('${v.name}')" class="p-3 border-b border-slate-100 cursor-pointer transition ${active}"><div class="flex justify-between items-center"><h4 class="font-bold text-sm text-slate-800">${v.name}</h4><span class="font-mono text-xs text-rose-600 font-bold">${SINET.Util.fmtMoney(v.total)}</span></div></div>`;
+                }).join('');
+            },
+
+            select: (name) => {
+                SRM.selectedVendor = name;
+                SRM.renderList(SRM.vendors.filter(v => v.toLowerCase().includes(document.getElementById('search-vendor').value.toLowerCase())));
+                
+                document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('vendor-content').classList.remove('hidden');
+                document.getElementById('v-name').innerText = name;
+
+                const myExp = SRM.expenses.filter(x => x.vendor === name);
+                const total = myExp.reduce((s,x)=>s+x.amount,0);
+                document.getElementById('v-total').innerText = SINET.Util.fmtMoney(total) + " RSD";
+                document.getElementById('stat-count').innerText = myExp.length;
+                document.getElementById('stat-last').innerText = myExp.length > 0 ? SINET.Util.fmtDate(myExp[0].date) : '-'; // Pretpostavka da je sortirano
+
+                // --- TAB 1: HISTORY ---
+                document.getElementById('v-history').innerHTML = myExp.map(x => `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 text-slate-500">${SINET.Util.fmtDate(x.date)}</td>
+                        <td class="p-3 font-bold text-slate-700">${x.ref}</td>
+                        <td class="p-3"><span class="bg-slate-100 px-2 py-1 rounded text-[10px] uppercase font-bold text-slate-500">${x.cat}</span></td>
+                        <td class="p-3 text-right font-mono font-bold text-rose-600">-${SINET.Util.fmtMoney(x.amount)}</td>
+                        <td class="p-3 text-center"><button onclick="SRM.delete('${x.id}')" class="text-slate-300 hover:text-red-500">✕</button></td>
+                    </tr>
+                `).join('');
+
+                // --- TAB 2: CATS ---
+                const catStats = {};
+                myExp.forEach(x => {
+                    if(!catStats[x.cat]) catStats[x.cat] = { count: 0, total: 0 };
+                    catStats[x.cat].count++;
+                    catStats[x.cat].total += x.amount;
+                });
+                
+                const sortedCats = Object.entries(catStats).sort((a,b) => b[1].total - a[1].total);
+                document.getElementById('v-cats-stats').innerHTML = sortedCats.map(([cat, stat]) => `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-700 uppercase">${cat}</td>
+                        <td class="p-3 text-right text-slate-500">${stat.count}</td>
+                        <td class="p-3 text-right font-mono font-bold text-rose-600">${SINET.Util.fmtMoney(stat.total)}</td>
+                    </tr>
+                `).join('');
+            },
+
+            switchTab: (tab) => {
+                document.getElementById('tab-history').classList.add('hidden'); document.getElementById('tab-cats').classList.add('hidden');
+                document.getElementById('tab-btn-history').className = "flex-1 p-3 text-xs font-bold inactive-tab";
+                document.getElementById('tab-btn-cats').className = "flex-1 p-3 text-xs font-bold inactive-tab";
+                document.getElementById('tab-'+tab).classList.remove('hidden');
+                document.getElementById('tab-btn-'+tab).className = "flex-1 p-3 text-xs font-bold active-tab";
+            },
+
+            newExpense: () => {
+                document.getElementById('e-amount').value = ""; document.getElementById('e-ref').value = "";
+                // Ako je selektovan dobavljač, popuni ga odmah
+                if(SRM.selectedVendor) document.getElementById('e-vendor').value = SRM.selectedVendor;
+                document.getElementById('modal-exp').classList.remove('hidden');
+            },
+
+            save: () => {
+                const amount = parseFloat(document.getElementById('e-amount').value);
+                const vendor = document.getElementById('e-vendor').value;
+                if(!amount || !vendor) return alert("Popunite podatke!");
+
+                const item = {
+                    id: SINET.Util.uuid(),
+                    date: document.getElementById('e-date').value,
+                    vendor: vendor,
+                    ref: document.getElementById('e-ref').value || "-",
+                    cat: document.getElementById('e-cat').value,
+                    amount: amount
+                };
+
+                SRM.expenses.unshift(item); // Dodaj na vrh
+                SINET.DB.save('expenses', SRM.expenses);
+                document.getElementById('modal-exp').classList.add('hidden');
+                
+                // Osveži sve
+                SRM.init();
+                SRM.select(vendor);
+            },
+
+            delete: (id) => {
+                if(confirm("Obrisati trošak?")) {
+                    SRM.expenses = SRM.expenses.filter(x => x.id !== id);
+                    SINET.DB.save('expenses', SRM.expenses);
+                    SRM.select(SRM.selectedVendor); // Refresh view
+                }
+            }
+        };
+        SRM.init();
+    </script>
+</body>
+</html>

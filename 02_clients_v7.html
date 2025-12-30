@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Partneri v11.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .active-tab { border-bottom: 2px solid #d946ef; color: #d946ef; background: #fdf4ff; }
+        .inactive-tab { color: #64748b; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <div class="bg-fuchsia-900 text-white p-4 shadow-lg flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-fuchsia-800">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <span class="material-icons-round text-fuchsia-300">handshake</span> 
+                    PARTNERI
+                </h1>
+                <p class="text-[10px] text-fuchsia-300 uppercase tracking-widest">Kupci & Dobavljači</p>
+            </div>
+        </div>
+        <button onclick="CRM.newClient()" class="bg-fuchsia-500 hover:bg-fuchsia-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2">
+            <span class="material-icons-round text-sm">add</span> Novi Partner
+        </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-white border-r border-slate-200 flex flex-col min-w-[300px]">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <input id="search-cli" onkeyup="CRM.filter()" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-fuchsia-500" placeholder="🔍 Traži partnera...">
+                <div class="flex gap-2 mt-2">
+                    <button onclick="CRM.filterType('SVE')" class="text-[9px] font-bold px-2 py-1 rounded bg-slate-200 text-slate-600 hover:bg-slate-300">SVI</button>
+                    <button onclick="CRM.filterType('KUPAC')" class="text-[9px] font-bold px-2 py-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200">KUPCI</button>
+                    <button onclick="CRM.filterType('DOBAVLJAČ')" class="text-[9px] font-bold px-2 py-1 rounded bg-orange-100 text-orange-600 hover:bg-orange-200">DOBAVLJAČI</button>
+                </div>
+            </div>
+            <div id="cli-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div class="w-2/3 bg-slate-50 flex flex-col relative overflow-y-auto hide-scroll">
+            
+            <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                <span class="material-icons-round text-6xl mb-4 text-slate-200">contact_page</span>
+                <p>Izaberite partnera sa leve strane.</p>
+            </div>
+
+            <div id="client-content" class="hidden p-8 max-w-5xl mx-auto w-full">
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h2 id="v-name" class="text-3xl font-black text-slate-800">Naziv Firme</h2>
+                            <span id="v-type-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white bg-slate-400">TIP</span>
+                        </div>
+                        <p class="text-slate-500 text-sm flex items-center gap-2 mt-1">
+                            <span class="material-icons-round text-sm">place</span> <span id="v-addr">Adresa</span>
+                        </p>
+                        <div class="flex gap-3 mt-2 text-xs font-bold text-slate-400">
+                            <span id="v-pib">PIB: -</span>
+                            <span id="v-mb">MB: -</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">SALDO (DUGUJE NAMA)</p>
+                        <h2 id="v-balance" class="text-3xl font-black text-slate-800">0.00 RSD</h2>
+                        <span id="v-status" class="inline-block mt-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-200 text-slate-500">STATUS</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mb-8">
+                    <div class="stat-card"><p class="text-[10px] uppercase font-bold text-slate-400">UKUPAN PROMET</p><p id="stat-inv" class="text-lg font-bold text-blue-600">0.00</p></div>
+                    <div class="stat-card"><p class="text-[10px] uppercase font-bold text-slate-400">PLAĆENO / RASHOD</p><p id="stat-paid" class="text-lg font-bold text-green-600">0.00</p></div>
+                    <div class="stat-card flex flex-col justify-center gap-2">
+                        <button onclick="CRM.editClient()" class="w-full bg-slate-100 text-slate-600 py-1 rounded text-xs font-bold hover:bg-slate-200">IZMENI</button>
+                        <button onclick="CRM.printIOS()" class="w-full bg-fuchsia-100 text-fuchsia-700 py-1 rounded text-xs font-bold hover:bg-fuchsia-200">ŠTAMPAJ IOS</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
+                    <div class="flex border-b border-slate-100">
+                        <button onclick="CRM.switchTab('history')" id="tab-btn-history" class="flex-1 p-3 text-xs font-bold active-tab">📄 DOKUMENTI</button>
+                        <button onclick="CRM.switchTab('items')" id="tab-btn-items" class="flex-1 p-3 text-xs font-bold inactive-tab">📦 ARTIKLI / USLUGE</button>
+                    </div>
+                    
+                    <div id="tab-history" class="p-0">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                                <tr><th class="p-3">Datum</th><th class="p-3">Dokument</th><th class="p-3 text-right">Iznos</th><th class="p-3 text-right">Saldo</th></tr>
+                            </thead>
+                            <tbody id="v-history"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="tab-items" class="p-0 hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-100">
+                                <tr><th class="p-3">Naziv</th><th class="p-3 text-right">Br. Puta</th><th class="p-3 text-right">Kol.</th><th class="p-3 text-right">Iznos</th></tr>
+                            </thead>
+                            <tbody id="v-items-stats"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-cli" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Podaci o Partneru</h3>
+            <input type="hidden" id="c-id">
+            <div class="space-y-3">
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-2">
+                        <label class="text-[9px] font-bold text-slate-400">NAZIV</label>
+                        <input id="in-naziv" class="inp w-full p-2 border rounded-lg font-bold" placeholder="Naziv Firme *">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400">TIP</label>
+                        <select id="in-type" class="w-full p-2 border rounded-lg text-xs font-bold">
+                            <option value="KUPAC">KUPAC</option>
+                            <option value="DOBAVLJAČ">DOBAVLJAČ</option>
+                            <option value="OBOJE">OBOJE</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3"><input id="in-pib" class="inp w-full p-2 border rounded-lg" placeholder="PIB"><input id="in-mb" class="inp w-full p-2 border rounded-lg" placeholder="Matični broj"></div>
+                <input id="in-adresa" class="inp w-full p-2 border rounded-lg" placeholder="Adresa"><input id="in-email" class="inp w-full p-2 border rounded-lg" placeholder="Email"><input id="in-telefon" class="inp w-full p-2 border rounded-lg" placeholder="Telefon">
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button onclick="CRM.deleteClient()" id="btn-del" class="hidden px-4 bg-red-100 text-red-600 rounded-xl font-bold"><span class="material-icons-round">delete</span></button>
+                <button onclick="CRM.saveClient()" class="flex-1 bg-fuchsia-600 text-white py-3 rounded-xl font-bold">SAČUVAJ</button>
+                <button onclick="document.getElementById('modal-cli').classList.add('hidden')" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">X</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CRM = {
+            clients: [], docs: [], payments: [], selected: null, filterMode: 'SVE',
+
+            init: () => {
+                CRM.clients = SINET.DB.get('clients') || [];
+                CRM.docs = SINET.DB.get('docs') || [];
+                CRM.payments = SINET.DB.get('payments') || [];
+                CRM.renderList(CRM.clients);
+            },
+
+            filter: () => {
+                const term = document.getElementById('search-cli').value.toLowerCase();
+                let filtered = CRM.clients.filter(c => c.osnovno.naziv.toLowerCase().includes(term) || c.osnovno.pib.includes(term));
+                
+                if(CRM.filterMode !== 'SVE') {
+                    filtered = filtered.filter(c => c.type === CRM.filterMode || c.type === 'OBOJE' || !c.type); 
+                    // !c.type znači da stari zapisi (koji su samo kupci) upadaju uvek, ili ih možemo tretirati kao kupce
+                    if(CRM.filterMode === 'KUPAC') filtered = filtered.filter(c => !c.type || c.type === 'KUPAC' || c.type === 'OBOJE');
+                    if(CRM.filterMode === 'DOBAVLJAČ') filtered = filtered.filter(c => c.type === 'DOBAVLJAČ' || c.type === 'OBOJE');
+                }
+                
+                CRM.renderList(filtered);
+            },
+
+            filterType: (t) => { CRM.filterMode = t; CRM.filter(); },
+
+            renderList: (list) => {
+                const c = document.getElementById('cli-list');
+                if(list.length===0) { c.innerHTML='<div class="p-4 text-center text-xs text-slate-400">Nema partnera.</div>'; return; }
+                c.innerHTML = list.map(cli => {
+                    const active = CRM.selected?.id === cli.id ? 'bg-fuchsia-50 border-l-4 border-fuchsia-500' : 'hover:bg-slate-50 border-l-4 border-transparent';
+                    const typeLabel = cli.type === 'DOBAVLJAČ' ? '<span class="text-[9px] bg-orange-100 text-orange-600 px-1 rounded">DOB</span>' : '<span class="text-[9px] bg-blue-100 text-blue-600 px-1 rounded">KUP</span>';
+                    
+                    return `<div onclick="CRM.select('${cli.id}')" class="p-3 border-b border-slate-100 cursor-pointer transition ${active}">
+                        <div class="flex justify-between items-center"><h4 class="font-bold text-sm text-slate-800">${cli.osnovno.naziv}</h4>${typeLabel}</div>
+                        <p class="text-[10px] text-slate-400 mt-1 flex justify-between"><span>${cli.kontakt.adresa||'-'}</span><span class="font-mono">${cli.osnovno.pib}</span></p></div>`;
+                }).join('');
+            },
+
+            switchTab: (tab) => {
+                document.getElementById('tab-history').classList.add('hidden'); document.getElementById('tab-items').classList.add('hidden');
+                document.getElementById('tab-btn-history').className = "flex-1 p-3 text-xs font-bold inactive-tab";
+                document.getElementById('tab-btn-items').className = "flex-1 p-3 text-xs font-bold inactive-tab";
+                document.getElementById('tab-'+tab).classList.remove('hidden');
+                document.getElementById('tab-btn-'+tab).className = "flex-1 p-3 text-xs font-bold active-tab";
+            },
+
+            select: (id) => {
+                const c = CRM.clients.find(x => x.id === id); if(!c) return;
+                CRM.selected = c; CRM.renderList(CRM.clients);
+                document.getElementById('empty-state').classList.add('hidden'); document.getElementById('client-content').classList.remove('hidden');
+                
+                document.getElementById('v-name').innerText = c.osnovno.naziv;
+                document.getElementById('v-addr').innerText = c.kontakt.adresa||'-';
+                document.getElementById('v-pib').innerText = "PIB: "+c.osnovno.pib; document.getElementById('v-mb').innerText = "MB: "+(c.osnovno.mb||'-');
+                
+                const typeEl = document.getElementById('v-type-badge');
+                if(c.type === 'DOBAVLJAČ') { typeEl.innerText = "DOBAVLJAČ"; typeEl.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white bg-orange-500"; }
+                else if(c.type === 'OBOJE') { typeEl.innerText = "PARTNER"; typeEl.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white bg-purple-500"; }
+                else { typeEl.innerText = "KUPAC"; typeEl.className = "px-2 py-0.5 rounded text-[10px] font-bold uppercase text-white bg-blue-500"; }
+
+                // --- FINANSIJE ---
+                // Ovde možemo proširiti da prikazuje i troškove ako je Dobavljač, ali za sada držimo logiku prodaje
+                const invoices = CRM.docs.filter(d => d.client.name === c.osnovno.naziv && (d.type==='FAKTURA'||d.type==='KNJIŽNO ODOBRENJE'));
+                const pays = CRM.payments.filter(p => p.client === c.osnovno.naziv);
+                
+                let totalInv = 0, totalPaid = pays.reduce((s,p)=>s+p.amount,0);
+                const itemStats = {};
+
+                const historyHTML = invoices.map(d => {
+                    let amount = SINET.Util.parseMoney(d.total);
+                    if(d.type==='KNJIŽNO ODOBRENJE') { if(amount>0) amount=-amount; totalPaid+=Math.abs(amount); } else totalInv+=amount;
+                    const paidForDoc = pays.filter(p=>p.ref===d.num).reduce((s,p)=>s+p.amount,0);
+                    const remaining = d.type==='FAKTURA'?(amount-paidForDoc):0;
+                    
+                    let items = d.items || [];
+                    if(typeof items === 'string') try { items = JSON.parse(items); } catch(e){}
+                    items.forEach(it => {
+                        if(it.type === 'prod') {
+                            if(!itemStats[it.desc]) itemStats[it.desc] = { count: 0, qty: 0, total: 0 };
+                            itemStats[it.desc].count++; itemStats[it.desc].qty += (parseFloat(it.qty)||0); itemStats[it.desc].total += (parseFloat(it.qty) * parseFloat(it.price));
+                        }
+                    });
+                    return `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 text-slate-500">${SINET.Util.fmtDate(d.date)}</td><td class="p-3 font-bold text-slate-700">${d.num} <span class="text-[9px] text-slate-400">${d.type}</span></td><td class="p-3 text-right font-mono">${SINET.Util.fmtMoney(amount)}</td><td class="p-3 text-right font-mono ${remaining<=1?'text-green-500':'text-red-500 font-bold'}">${d.type==='FAKTURA'?SINET.Util.fmtMoney(remaining):'-'}</td></tr>`;
+                }).join('');
+
+                document.getElementById('v-history').innerHTML = historyHTML;
+
+                const sortedItems = Object.entries(itemStats).sort((a,b) => b[1].total - a[1].total);
+                document.getElementById('v-items-stats').innerHTML = sortedItems.map(([name, stat]) => `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 font-bold text-slate-700">${name}</td><td class="p-3 text-right text-slate-500">${stat.count}x</td><td class="p-3 text-right font-mono">${stat.qty}</td><td class="p-3 text-right font-mono font-bold text-fuchsia-600">${SINET.Util.fmtMoney(stat.total)}</td></tr>
+                `).join('') || '<tr><td colspan="4" class="p-4 text-center text-slate-400">Nema podataka.</td></tr>';
+
+                const bal = totalInv - totalPaid;
+                document.getElementById('stat-inv').innerText = SINET.Util.fmtMoney(totalInv);
+                document.getElementById('stat-paid').innerText = SINET.Util.fmtMoney(totalPaid);
+                document.getElementById('v-balance').innerText = SINET.Util.fmtMoney(bal) + " RSD";
+                const st = document.getElementById('v-status');
+                if(bal<=100) { st.innerText="UREDNO"; st.className="inline-block mt-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700"; }
+                else { st.innerText="DUGUJE"; st.className="inline-block mt-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700"; }
+            },
+
+            newClient: () => { CRM.selected=null; document.getElementById('c-id').value=""; document.querySelectorAll('#modal-cli input, #modal-cli select').forEach(i=>i.value=""); document.getElementById('in-type').value="KUPAC"; document.getElementById('btn-del').classList.add('hidden'); document.getElementById('modal-cli').classList.remove('hidden'); },
+            editClient: () => { if(!CRM.selected)return; const c=CRM.selected; document.getElementById('c-id').value=c.id; document.getElementById('in-naziv').value=c.osnovno.naziv; document.getElementById('in-pib').value=c.osnovno.pib; document.getElementById('in-mb').value=c.osnovno.mb||""; document.getElementById('in-adresa').value=c.kontakt.adresa||""; document.getElementById('in-email').value=c.kontakt.email||""; document.getElementById('in-telefon').value=c.kontakt.telefon||""; document.getElementById('in-type').value=c.type||"KUPAC"; document.getElementById('btn-del').classList.remove('hidden'); document.getElementById('modal-cli').classList.remove('hidden'); },
+            saveClient: () => { const id=document.getElementById('c-id').value||SINET.Util.uuid(); const cli={ id:id, type:document.getElementById('in-type').value, osnovno:{naziv:document.getElementById('in-naziv').value,pib:document.getElementById('in-pib').value,mb:document.getElementById('in-mb').value}, kontakt:{adresa:document.getElementById('in-adresa').value,email:document.getElementById('in-email').value,telefon:document.getElementById('in-telefon').value}, komercijala:{status:"OK"} }; if(!cli.osnovno.naziv) return alert("Naziv!"); const idx=CRM.clients.findIndex(x=>x.id===id); if(idx>-1) CRM.clients[idx]=cli; else CRM.clients.unshift(cli); SINET.DB.save('clients',CRM.clients); document.getElementById('modal-cli').classList.add('hidden'); CRM.init(); CRM.select(id); },
+            deleteClient: () => { if(confirm("Obrisati?")) { const id=document.getElementById('c-id').value; CRM.clients=CRM.clients.filter(x=>x.id!==id); SINET.DB.save('clients',CRM.clients); location.reload(); } },
+            printIOS: () => { if(!CRM.selected) return; localStorage.setItem('sinet_temp_ios_target',CRM.selected.osnovno.naziv); window.location.href='06_finance_v7.html'; }
+        };
+        CRM.init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Delovodnik v7.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        
+        .table-row { border-bottom: 1px solid #f1f5f9; }
+        .table-row:last-child { border-bottom: none; }
+        
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white; -webkit-print-color-adjust: exact; }
+            #header, #filters, #fab-add, .no-print { display: none !important; }
+            #print-title { display: block !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            th, td { border: 1px solid #000; padding: 4px; }
+            th:last-child, td:last-child { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header" class="bg-indigo-900 text-white p-4 sticky top-0 z-50 shadow-lg flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-indigo-700">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <h1 class="text-lg font-bold">Delovodnik</h1>
+        </div>
+        <button onclick="Logbook.printLog()" class="bg-indigo-600 px-3 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2">
+            <span class="material-icons-round text-sm">print</span> Štampaj
+        </button>
+    </div>
+
+    <div id="filters" class="bg-white p-4 border-b border-slate-200 sticky top-[68px] z-40 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">OD DATUMA</label>
+                <input type="date" id="f-start" onchange="Logbook.filter()" class="w-full p-2 bg-slate-50 rounded-lg border text-sm font-bold">
+            </div>
+            <div>
+                <label class="text-[9px] font-bold text-slate-400 uppercase">DO DATUMA</label>
+                <input type="date" id="f-end" onchange="Logbook.filter()" class="w-full p-2 bg-slate-50 rounded-lg border text-sm font-bold">
+            </div>
+        </div>
+        <div class="flex gap-2 overflow-x-auto hide-scroll pb-1">
+            <button onclick="Logbook.setPeriod('all')" class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold whitespace-nowrap">SVE</button>
+            <button onclick="Logbook.setPeriod('month')" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold whitespace-nowrap">OVAJ MESEC</button>
+            <button onclick="Logbook.setPeriod('year')" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold whitespace-nowrap">OVA GODINA</button>
+        </div>
+        <input id="f-search" onkeyup="Logbook.filter()" placeholder="Pretraži predmet, partnera, broj..." class="w-full p-3 bg-slate-50 rounded-xl text-sm font-bold border-none outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>
+
+    <div id="print-title" class="hidden text-center py-4">
+        <h2 class="text-xl font-bold uppercase">IZVOD IZ DELOVODNIKA</h2>
+        <p id="print-period" class="text-sm text-slate-500"></p>
+    </div>
+
+    <div class="p-2 md:p-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div id="log-list" class="block md:hidden"></div>
+            <table class="w-full hidden md:table">
+                <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
+                    <tr>
+                        <th class="p-3 text-left w-24">Br.</th>
+                        <th class="p-3 text-left w-24">Datum</th>
+                        <th class="p-3 text-left">Predmet</th>
+                        <th class="p-3 text-left">Partner</th>
+                        <th class="p-3 text-left w-20">Tip</th>
+                        <th class="p-3 text-left w-20 no-print">Opcije</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <button onclick="openModal()" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition z-50">
+        <span class="material-icons-round text-3xl">edit_note</span>
+    </button>
+
+    <div id="modal-wrapper" class="fixed inset-0 bg-black/80 z-[100] hidden flex items-end sm:items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl animate-slide-up">
+            <h3 class="text-lg font-bold text-indigo-900 mb-4 border-b pb-2">ZAVEDI DOKUMENT</h3>
+            <input type="hidden" id="l-id">
+            
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">DATUM</label>
+                        <input type="date" id="l-datum" class="w-full p-2 border rounded-lg font-bold">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">TIP</label>
+                        <select id="l-tip" class="w-full p-2 border rounded-lg font-bold bg-white">
+                            <option>ULAZNI</option>
+                            <option>IZLAZNI</option>
+                            <option>INTERNI</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <input id="l-predmet" class="w-full p-3 border rounded-xl font-bold" placeholder="Predmet *">
+                
+                <div class="relative">
+                    <input id="l-partner" list="partners-list" class="w-full p-3 border rounded-xl" placeholder="Partner / Pošiljalac">
+                    <datalist id="partners-list"></datalist>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <input id="l-org" class="p-3 border rounded-xl" placeholder="Org. Jedinica">
+                    <input id="l-nacin" class="p-3 border rounded-xl" placeholder="Način dostave">
+                </div>
+
+                <textarea id="l-napomena" class="w-full p-3 border rounded-xl h-20 text-sm" placeholder="Napomena..."></textarea>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+                <button onclick="Logbook.delete()" id="btn-del" class="hidden px-4 py-3 bg-red-100 text-red-600 rounded-xl font-bold"><span class="material-icons-round">delete</span></button>
+                <button onclick="Logbook.save()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">SAČUVAJ</button>
+                <button onclick="document.getElementById('modal-wrapper').classList.add('hidden')" class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold">X</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const Logbook = {
+            data: [],
+            
+            init: () => {
+                Logbook.data = SINET.DB.get('delovodnik') || [];
+                const clients = SINET.DB.get('clients') || [];
+                document.getElementById('partners-list').innerHTML = clients.map(c => `<option value="${c.osnovno.naziv}">`).join('');
+                Logbook.setPeriod('year');
+            },
+
+            printLog: () => {
+                const start = document.getElementById('f-start').value || "POCETAK";
+                const end = document.getElementById('f-end').value || "KRAJ";
+                const oldTitle = document.title;
+                document.title = `DELOVODNIK_${start}_DO_${end}`;
+                window.print();
+                setTimeout(() => document.title = oldTitle, 1000);
+            },
+
+            // --- POPRAVLJENO ČUVANJE (TRY-CATCH) ---
+            save: () => {
+                try {
+                    const idVal = document.getElementById('l-id').value;
+                    const id = idVal || SINET.Util.uuid();
+                    
+                    const dateVal = document.getElementById('l-datum').value;
+                    if(!dateVal) return alert("Molim vas unesite Datum!");
+                    
+                    const year = new Date(dateVal).getFullYear();
+                    
+                    let num = "";
+                    const existing = Logbook.data.find(x => x.id === id);
+                    
+                    if(existing) {
+                        num = existing.num;
+                    } else {
+                        // FIX: Provera da li x.date postoji pre nego što pozovemo startsWith
+                        const count = Logbook.data.filter(x => x.date && x.date.startsWith(String(year))).length + 1;
+                        num = `01-${String(count).padStart(3,'0')}/${year}`;
+                    }
+
+                    const entry = {
+                        id: id,
+                        num: num,
+                        date: dateVal,
+                        type: document.getElementById('l-tip').value,
+                        sub: document.getElementById('l-predmet').value,
+                        part: document.getElementById('l-partner').value,
+                        org: document.getElementById('l-org').value,
+                        way: document.getElementById('l-nacin').value,
+                        note: document.getElementById('l-napomena').value
+                    };
+
+                    if(!entry.sub) return alert("Predmet je obavezan!");
+
+                    const idx = Logbook.data.findIndex(x => x.id === id);
+                    if(idx > -1) Logbook.data[idx] = entry;
+                    else Logbook.data.unshift(entry);
+
+                    SINET.DB.save('delovodnik', Logbook.data);
+                    document.getElementById('modal-wrapper').classList.add('hidden');
+                    Logbook.filter();
+                    
+                } catch (e) {
+                    console.error(e);
+                    alert("Došlo je do greške: " + e.message);
+                }
+            },
+
+            edit: (id) => {
+                const e = Logbook.data.find(x => x.id === id);
+                if(!e) return;
+                document.getElementById('l-id').value = e.id;
+                document.getElementById('l-datum').value = e.date;
+                document.getElementById('l-tip').value = e.type;
+                document.getElementById('l-predmet').value = e.sub;
+                document.getElementById('l-partner').value = e.part;
+                document.getElementById('l-org').value = e.org || "";
+                document.getElementById('l-nacin').value = e.way || "";
+                document.getElementById('l-napomena').value = e.note || "";
+                
+                document.getElementById('btn-del').classList.remove('hidden');
+                document.getElementById('modal-wrapper').classList.remove('hidden');
+            },
+
+            delete: () => {
+                if(confirm("Trajno obrisati zapis?")) {
+                    const id = document.getElementById('l-id').value;
+                    Logbook.data = Logbook.data.filter(x => x.id !== id);
+                    SINET.DB.save('delovodnik', Logbook.data);
+                    document.getElementById('modal-wrapper').classList.add('hidden');
+                    Logbook.filter();
+                }
+            },
+
+            setPeriod: (p) => {
+                const now = new Date();
+                const startInp = document.getElementById('f-start');
+                const endInp = document.getElementById('f-end');
+                
+                if(p === 'month') {
+                    startInp.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    endInp.value = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+                } else if(p === 'year') {
+                    startInp.value = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                    endInp.value = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                } else {
+                    startInp.value = ''; endInp.value = '';
+                }
+                Logbook.filter();
+            },
+
+            filter: () => {
+                const start = document.getElementById('f-start').value;
+                const end = document.getElementById('f-end').value;
+                const search = document.getElementById('f-search').value.toLowerCase();
+
+                const filtered = Logbook.data.filter(e => {
+                    const dateMatch = (!start || e.date >= start) && (!end || e.date <= end);
+                    // Dodata provera da li polja postoje pre toLowerCase()
+                    const textMatch = (e.sub && e.sub.toLowerCase().includes(search)) || 
+                                      (e.part && e.part.toLowerCase().includes(search)) || 
+                                      (e.num && e.num.includes(search));
+                    return dateMatch && textMatch;
+                });
+
+                document.getElementById('print-period').innerText = start && end ? 
+                    `Period: ${SINET.Util.fmtDate(start)} - ${SINET.Util.fmtDate(end)}` : "Svi zapisi";
+
+                Logbook.render(filtered);
+            },
+
+            render: (list) => {
+                const cards = list.map(e => `
+                    <div onclick="Logbook.edit('${e.id}')" class="bg-white p-3 border-b last:border-0 border-slate-100 flex gap-3 items-center active:bg-slate-50">
+                        <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500 shrink-0 text-center leading-tight">
+                            ${SINET.Util.fmtDate(e.date).substring(0,5)}<br>${e.date.split('-')[0]}
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex justify-between">
+                                <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-1.5 rounded">${e.num}</span>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase">${e.type}</span>
+                            </div>
+                            <h4 class="font-bold text-sm truncate text-slate-800">${e.sub}</h4>
+                            <p class="text-xs text-slate-500 truncate">${e.part}</p>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('log-list').innerHTML = cards || '<div class="p-5 text-center text-slate-400 text-sm">Nema podataka</div>';
+
+                const rows = list.map(e => `
+                    <tr class="table-row">
+                        <td class="p-3 font-bold text-xs whitespace-nowrap">${e.num}</td>
+                        <td class="p-3 text-xs whitespace-nowrap">${SINET.Util.fmtDate(e.date)}</td>
+                        <td class="p-3 text-sm">${e.sub}</td>
+                        <td class="p-3 text-sm">${e.part}</td>
+                        <td class="p-3 text-xs uppercase">${e.type}</td>
+                        <td class="p-3 text-xs no-print">
+                            <button onclick="Logbook.edit('${e.id}')" class="text-blue-600 font-bold mr-2">UREDI</button>
+                        </td>
+                    </tr>
+                `).join('');
+                document.getElementById('log-table-body').innerHTML = rows;
+            }
+        };
+
+        function openModal() {
+            document.getElementById('l-id').value = '';
+            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            document.getElementById('l-datum').valueAsDate = new Date();
+            document.getElementById('btn-del').classList.add('hidden');
+            document.getElementById('modal-wrapper').classList.remove('hidden');
+        }
+
+        Logbook.init();
+    </script>
+</body>
+</html>

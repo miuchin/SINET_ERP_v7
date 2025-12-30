@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Katalog v18.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, sans-serif; } 
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        
+        /* --- PRINT STYLES --- */
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white; color: black; font-family: 'Times New Roman', serif; }
+            #sidebar, #header, #empty-state, .no-print, .card-ui-header, button { display: none !important; }
+            #main-area { width: 100% !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+            #art-content { display: block !important; padding: 0 !important; }
+            .print-header { display: block !important; border-bottom: 2px solid black; padding-bottom: 15px; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th { border-bottom: 1px solid black !important; font-weight: bold; text-align: left; padding: 5px; }
+            td { border-bottom: 1px solid #ddd; padding: 5px; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <div id="header" class="bg-emerald-900 text-white p-4 shadow-lg flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-emerald-800"><span class="material-icons-round">arrow_back</span></button>
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2"><span class="material-icons-round text-emerald-300">inventory</span> KATALOG ROBE</h1>
+                <p class="text-[10px] text-emerald-300 uppercase tracking-widest">Master Data & Lager</p>
+            </div>
+        </div>
+        <button onclick="Art.newArt()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2"><span class="material-icons-round text-sm">add</span> Novi Artikal</button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div id="sidebar" class="w-1/3 bg-white border-r border-slate-200 flex flex-col min-w-[300px]">
+            <div class="p-4 border-b border-slate-100"><input id="search-art" onkeyup="Art.filter()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500" placeholder="🔍 Šifra, Naziv, Barkod..."></div>
+            <div id="art-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div id="main-area" class="w-2/3 bg-slate-50 flex flex-col relative overflow-y-auto hide-scroll">
+            <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                <span class="material-icons-round text-6xl mb-4 text-slate-200">category</span>
+                <p>Izaberite artikal za detalje.</p>
+            </div>
+
+            <div id="art-content" class="hidden p-8 max-w-5xl mx-auto w-full">
+                
+                <div class="print-header">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h1 class="text-2xl font-bold uppercase mb-1">MAGACINSKA KARTICA</h1>
+                            <p class="text-xs text-slate-500" id="print-firm-name">MOJA FIRMA</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-slate-500 uppercase">DATUM I VREME ŠTAMPE</p>
+                            <p id="p-date" class="font-bold font-mono"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-end border-t border-slate-300 pt-4">
+                        <div>
+                            <h2 id="p-name" class="text-3xl font-black mb-1">NAZIV ARTIKLA</h2>
+                            <p class="text-sm">Šifra: <span id="p-code" class="font-bold font-mono"></span> &nbsp;|&nbsp; Barkod: <span id="p-barcode" class="font-bold font-mono"></span></p>
+                            <p class="text-sm">Lokacija: <span id="p-loc" class="font-bold"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs uppercase font-bold text-slate-500">TRENUTNO STANJE</p>
+                            <p id="p-stock" class="text-4xl font-black">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-ui-header bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="v-code" class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold font-mono">ŠIFRA</span>
+                            <span id="v-barcode" class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1"><span class="material-icons-round text-[10px]">qr_code</span> BARKOD</span>
+                        </div>
+                        <h2 id="v-name" class="text-3xl font-black text-slate-800">Naziv Artikla</h2>
+                        <p class="text-xs text-slate-500 mt-1 flex gap-4">
+                            <span>Lokacija: <b id="v-loc">-</b></span>
+                            <span>Min. Zaliha: <b id="v-min">-</b></span>
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">PRODAJNA CENA (SA PDV)</p>
+                        <h2 id="v-price" class="text-3xl font-black text-emerald-600">0,00 RSD</h2>
+                        <div class="flex justify-end gap-2 text-[10px] font-bold mt-1 text-slate-400">
+                            <span>Nabavna: <span id="v-cost">0,00</span></span>
+                            <span>Stanje: <span id="v-stock" class="text-black text-lg">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-8 no-print">
+                    <button onclick="Art.printCard()" class="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-slate-700 flex items-center gap-2 transition transform active:scale-95">
+                        <span class="material-icons-round">print</span> ŠTAMPAJ KARTICU
+                    </button>
+                    <div class="w-4"></div>
+                    <button onclick="Art.openStockModal()" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 flex justify-center items-center gap-2"><span class="material-icons-round">add_box</span> ULAZ ROBE</button>
+                    <button onclick="Art.editArt()" class="px-6 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100 border border-blue-200">IZMENI</button>
+                    <button onclick="Art.deleteArt()" class="px-4 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 border border-red-200"><span class="material-icons-round">delete</span></button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-3 border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase flex justify-between">
+                        <span>PROMET ARTIKLA (ULAZ / IZLAZ)</span>
+                        <span class="no-print opacity-50">Poslednjih 50 promena</span>
+                    </div>
+                    <table class="w-full text-left text-xs">
+                        <thead class="text-slate-400 border-b border-slate-100 bg-slate-50">
+                            <tr>
+                                <th class="p-3 w-24">Datum</th>
+                                <th class="p-3">Dokument / Opis</th>
+                                <th class="p-3 text-right w-20">Ulaz</th>
+                                <th class="p-3 text-right w-20">Izlaz</th>
+                                <th class="p-3 text-right w-20 font-black text-slate-800">STANJE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-card-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-art" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm overflow-y-auto no-print">
+        <div class="bg-white w-full max-w-2xl rounded-2xl p-8 shadow-2xl m-4">
+            <h3 class="text-xl font-black text-slate-800 mb-6 border-b pb-4">Matični Podaci Artikla</h3>
+            <input type="hidden" id="a-id">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">IDENTIFIKACIJA</h4>
+                    <div><label class="text-[9px] font-bold text-slate-400">ŠIFRA</label><input id="in-code" class="w-full p-2 border rounded font-mono font-bold" placeholder="Auto-generisano"></div>
+                    <div><label class="text-[9px] font-bold text-slate-400">BARKOD (EAN)</label><input id="in-barcode" class="w-full p-2 border rounded font-mono" placeholder="Skeniraj..."></div>
+                    <div><label class="text-[9px] font-bold text-slate-400">NAZIV ARTIKLA *</label><input id="in-name" class="w-full p-2 border rounded font-bold" placeholder="Naziv robe ili usluge"></div>
+                    <div class="flex gap-2">
+                        <div class="w-1/2"><label class="text-[9px] font-bold text-slate-400">JED. MERE</label><input id="in-unit" class="w-full p-2 border rounded text-center" placeholder="kom"></div>
+                        <div class="w-1/2"><label class="text-[9px] font-bold text-slate-400">LOKACIJA</label><input id="in-loc" class="w-full p-2 border rounded text-center" placeholder="Polica A1"></div>
+                    </div>
+                    <div><label class="text-[9px] font-bold text-slate-400">MINIMALNA ZALIHA (ALARM)</label><input type="number" id="in-min" class="w-full p-2 border rounded text-center" placeholder="0"></div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                    <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2">KALKULACIJA CENE</h4>
+                    <div><label class="text-[9px] font-bold text-slate-400">NABAVNA CENA (BEZ PDV)</label><input type="number" step="0.01" id="in-cost" onkeyup="Art.calcPrice()" class="w-full p-2 border rounded font-mono text-right" placeholder="0.00"></div>
+                    <div class="flex gap-2">
+                        <div class="w-1/2"><label class="text-[9px] font-bold text-slate-400">MARŽA %</label><input type="number" step="0.01" id="in-margin" onkeyup="Art.calcPrice()" class="w-full p-2 border rounded text-right" value="20"></div>
+                        <div class="w-1/2"><label class="text-[9px] font-bold text-slate-400">PDV %</label><select id="in-tax" onchange="Art.calcPrice()" class="w-full p-2 border rounded text-right font-bold"><option value="20">20%</option><option value="10">10%</option><option value="0">0%</option></select></div>
+                    </div>
+                    <div class="border-t border-slate-300 pt-2"><label class="text-[9px] font-bold text-slate-400">PRODAJNA BEZ PDV</label><input id="in-net" class="w-full bg-transparent text-right font-mono text-sm" disabled value="0.00"></div>
+                    <div class="bg-emerald-100 p-2 rounded border border-emerald-300"><label class="text-[9px] font-bold text-emerald-800">KONAČNA PRODAJNA CENA</label><input type="number" step="0.01" id="in-price" class="w-full bg-transparent text-right font-black text-xl text-emerald-900 outline-none" placeholder="0.00"></div>
+                </div>
+            </div>
+            <div class="mt-8 flex gap-3"><button onclick="Art.saveArt()" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-emerald-700">SAČUVAJ ARTIKAL</button><button onclick="document.getElementById('modal-art').classList.add('hidden')" class="px-6 bg-slate-100 text-slate-500 rounded-xl font-bold">OTKAŽI</button></div>
+        </div>
+    </div>
+
+    <div id="modal-stock" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm no-print">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-lg font-bold text-emerald-900 mb-4">Ulaz / Nivelacija</h3>
+            <div class="space-y-3"><input id="st-qty" type="number" class="w-full p-4 border border-emerald-300 rounded-xl font-black text-2xl text-center" placeholder="0"><input id="st-note" class="w-full p-3 border rounded-xl" placeholder="Napomena"></div>
+            <div class="mt-6 flex gap-3"><button onclick="Art.saveStock()" class="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold">PROKNJIŽI</button><button onclick="document.getElementById('modal-stock').classList.add('hidden')" class="px-4 bg-slate-100 text-slate-500 rounded-xl font-bold">X</button></div>
+        </div>
+    </div>
+
+    <script>
+        const Art = {
+            list: [], selected: null, config: {},
+
+            init: () => {
+                Art.config = SINET.Config.load();
+                document.getElementById('print-firm-name').innerText = Art.config.firma.naziv;
+                Art.list = SINET.DB.get('articles') || [];
+                Art.renderList(Art.list);
+            },
+
+            // --- NOVA FUNKCIJA ZA ŠTAMPU SA PAMETNIM IMENOM ---
+            printCard: () => {
+                if(!Art.selected) return;
+                
+                // 1. Pripremi podatke za ime fajla
+                const name = Art.selected.name.replace(/[^a-z0-9čćžšđ\s-]/gi, '').trim(); // Očisti specijalne znake
+                const code = Art.selected.code || "NoCode";
+                const date = new Date();
+                
+                // Format: KARTICA_Naziv_Sifra_Datum_Vreme
+                const dateStr = date.toISOString().slice(0,10); // 2025-12-30
+                const timeStr = date.getHours().toString().padStart(2,'0') + "-" + date.getMinutes().toString().padStart(2,'0');
+                
+                const newTitle = `KARTICA_${name}_${code}_${dateStr}_${timeStr}`;
+                const oldTitle = document.title;
+
+                // 2. Promeni naslov stranice (Browser ovo koristi kao ime PDF-a)
+                document.title = newTitle;
+
+                // 3. Štampaj
+                window.print();
+
+                // 4. Vrati stari naslov (da ne zbunimo korisnika)
+                // Koristimo setTimeout jer print blokira izvršavanje dok se dijalog ne zatvori
+                setTimeout(() => { document.title = oldTitle; }, 2000);
+            },
+
+            calcPrice: () => { 
+                const cost = parseFloat(document.getElementById('in-cost').value) || 0;
+                const margin = parseFloat(document.getElementById('in-margin').value) || 0;
+                const tax = parseFloat(document.getElementById('in-tax').value) || 20;
+                const netPrice = cost * (1 + (margin/100));
+                document.getElementById('in-net').value = netPrice.toFixed(2);
+                const finalPrice = netPrice * (1 + (tax/100));
+                document.getElementById('in-price').value = finalPrice.toFixed(2);
+            },
+
+            filter: () => {
+                const term = document.getElementById('search-art').value.toLowerCase();
+                Art.renderList(Art.list.filter(a => a.name.toLowerCase().includes(term) || (a.code && a.code.toLowerCase().includes(term)) || (a.barcode && a.barcode.includes(term))));
+            },
+
+            renderList: (list) => {
+                const c = document.getElementById('art-list');
+                if(list.length===0) { c.innerHTML='<div class="p-4 text-center text-xs text-slate-400">Nema artikala.</div>'; return; }
+                c.innerHTML = list.map(a => {
+                    const stock = SINET.Stock.getQty(a.name);
+                    const active = Art.selected?.id === a.id ? 'bg-emerald-50 border-l-4 border-emerald-500' : 'hover:bg-slate-50 border-l-4 border-transparent';
+                    const stockClass = stock <= (a.min_stock || 0) ? 'text-red-500 bg-red-50 px-2 rounded' : 'text-emerald-600';
+                    const code = a.code ? `<span class="text-[9px] bg-slate-200 px-1 rounded mr-1">${a.code}</span>` : '';
+                    return `<div onclick="Art.select('${a.id}')" class="p-3 border-b border-slate-100 cursor-pointer transition ${active}"><div class="flex justify-between items-center mb-1"><div class="truncate font-bold text-sm text-slate-800">${code} ${a.name}</div><span class="font-black text-xs ${stockClass}">${stock} ${a.unit||''}</span></div><p class="text-[10px] text-slate-400 flex justify-between"><span>${a.barcode || '-'}</span><span class="font-bold text-emerald-600">${SINET.Util.fmtMoney(a.price)}</span></p></div>`;
+                }).join('');
+            },
+
+            select: (id) => {
+                const a = Art.list.find(x => x.id === id); if(!a) return;
+                Art.selected = a; Art.renderList(Art.list);
+                document.getElementById('empty-state').classList.add('hidden'); document.getElementById('art-content').classList.remove('hidden');
+                
+                const stock = SINET.Stock.getQty(a.name);
+                
+                // POPUNJAVANJE PODATAKA
+                document.getElementById('v-name').innerText = a.name;
+                document.getElementById('v-code').innerText = a.code || "NEMA";
+                document.getElementById('v-barcode').innerText = a.barcode || "-";
+                document.getElementById('v-loc').innerText = a.location || "-";
+                document.getElementById('v-min').innerText = a.min_stock || "0";
+                document.getElementById('v-price').innerText = SINET.Util.fmtMoney(a.price);
+                document.getElementById('v-cost').innerText = SINET.Util.fmtMoney(a.cost_price || 0);
+                document.getElementById('v-stock').innerText = stock + " " + (a.unit || "");
+
+                // PRINT DATA
+                document.getElementById('p-name').innerText = a.name;
+                document.getElementById('p-code').innerText = a.code || "-";
+                document.getElementById('p-barcode').innerText = a.barcode || "-";
+                document.getElementById('p-loc').innerText = a.location || "-";
+                document.getElementById('p-stock').innerText = stock + " " + (a.unit || "");
+                const now = new Date();
+                document.getElementById('p-date').innerText = now.toLocaleDateString('sr-RS') + " " + now.toLocaleTimeString('sr-RS');
+
+                // ISTORIJA
+                let movements = [];
+                const docs = SINET.DB.get('docs') || [];
+                docs.forEach(d => {
+                    if((d.items && (d.type.includes('FAKTURA') || d.type.includes('AVANS') || d.type.includes('OTPREM') || d.type.includes('KNJIŽNO')))) {
+                        const items = (typeof d.items==='string')?JSON.parse(d.items):d.items;
+                        items.forEach(it => {
+                            if(it.desc === a.name && it.type==='prod') {
+                                let qty = parseFloat(it.qty);
+                                let type = d.type.includes('KNJIŽNO') ? 'in' : 'out';
+                                movements.push({ date: d.date, desc: `${d.type} ${d.num}`, in: type==='in'?qty:0, out: type==='out'?qty:0 });
+                            }
+                        });
+                    }
+                });
+                const entries = SINET.DB.get('stock_entries') || [];
+                entries.filter(e => e.art === a.name).forEach(e => { movements.push({ date: e.date, desc: `ULAZ: ${e.note}`, in: e.qty, out: 0 }); });
+                movements.sort((x,y) => x.date.localeCompare(y.date));
+                
+                let rs = 0;
+                document.getElementById('stock-card-body').innerHTML = movements.map(m => {
+                    rs = rs + m.in - m.out;
+                    return `<tr class="border-b border-slate-100 hover:bg-slate-50"><td class="p-3 text-slate-500 font-mono">${SINET.Util.fmtDate(m.date)}</td><td class="p-3 font-bold text-slate-700 text-xs">${m.desc}</td><td class="p-3 text-right text-emerald-600 font-bold">${m.in>0?'+'+m.in:''}</td><td class="p-3 text-right text-red-500 font-bold">${m.out>0?'-'+m.out:''}</td><td class="p-3 text-right font-black bg-slate-50">${rs}</td></tr>`;
+                }).join('');
+            },
+
+            newArt: () => { 
+                Art.selected=null; document.getElementById('a-id').value=""; 
+                document.querySelectorAll('#modal-art input').forEach(i=>i.value="");
+                document.getElementById('in-tax').value = "20";
+                document.getElementById('in-margin').value = "20";
+                document.getElementById('modal-art').classList.remove('hidden'); 
+            },
+            
+            editArt: () => { 
+                if(!Art.selected)return; const a=Art.selected; 
+                document.getElementById('a-id').value=a.id;
+                document.getElementById('in-name').value=a.name; 
+                document.getElementById('in-unit').value=a.unit||"kom"; 
+                document.getElementById('in-code').value=a.code||"";
+                document.getElementById('in-barcode').value=a.barcode||"";
+                document.getElementById('in-loc').value=a.location||"";
+                document.getElementById('in-min').value=a.min_stock||0;
+                document.getElementById('in-cost').value=a.cost_price||0;
+                document.getElementById('in-tax').value=a.tax||20;
+                document.getElementById('in-price').value=a.price;
+                document.getElementById('modal-art').classList.remove('hidden'); 
+            },
+
+            saveArt: () => { 
+                const id=document.getElementById('a-id').value||SINET.Util.uuid(); 
+                const item={ 
+                    id:id, 
+                    name:document.getElementById('in-name').value, 
+                    unit:document.getElementById('in-unit').value, 
+                    price:parseFloat(document.getElementById('in-price').value)||0,
+                    cost_price: parseFloat(document.getElementById('in-cost').value)||0,
+                    tax: parseFloat(document.getElementById('in-tax').value)||20,
+                    code: document.getElementById('in-code').value,
+                    barcode: document.getElementById('in-barcode').value,
+                    location: document.getElementById('in-loc').value,
+                    min_stock: parseFloat(document.getElementById('in-min').value)||0
+                }; 
+                if(!item.name) return alert("Naziv!"); 
+                const idx=Art.list.findIndex(x=>x.id===id); 
+                if(idx>-1) Art.list[idx]=item; else Art.list.unshift(item); 
+                SINET.DB.save('articles',Art.list); 
+                document.getElementById('modal-art').classList.add('hidden'); 
+                Art.init(); Art.select(id); 
+            },
+            
+            openStockModal: () => { document.getElementById('st-qty').value=""; document.getElementById('st-note').value=""; document.getElementById('modal-stock').classList.remove('hidden'); },
+            saveStock: () => { const q=document.getElementById('st-qty').value; const n=document.getElementById('st-note').value; if(!q||!Art.selected)return; SINET.Stock.addEntry(Art.selected.name,q,n); document.getElementById('modal-stock').classList.add('hidden'); Art.select(Art.selected.id); },
+            deleteArt: () => { if(confirm("Obrisati?")) { const id=document.getElementById('a-id').value; Art.list=Art.list.filter(x=>x.id!==id); SINET.DB.save('articles',Art.list); location.reload(); } }
+        };
+        Art.init();
+    </script>
+</body>
+</html>

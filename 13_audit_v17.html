@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="sr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SINET Audit Log v17.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <script>tailwind.config = { darkMode: 'class' };</script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'JetBrains Mono', monospace; background-color: #0f172a; color: #38bdf8; }
+        .log-entry:hover { background-color: #1e293b; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4 md:p-8">
+
+    <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white transition">
+                <span class="material-icons-round">arrow_back_ios</span>
+            </button>
+            <div>
+                <h1 class="text-xl font-bold text-green-400 tracking-wider">SYSTEM_AUDIT_LOG</h1>
+                <p class="text-[10px] text-slate-500">SECURE://SINET/VAR/LOG/SYS.LOG</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="Audit.export()" class="text-xs border border-slate-600 px-3 py-1 text-slate-400 hover:bg-slate-800 rounded">EXPORT.CSV</button>
+            <button onclick="location.reload()" class="text-xs border border-slate-600 px-3 py-1 text-slate-400 hover:bg-slate-800 rounded">REFRESH</button>
+        </div>
+    </div>
+
+    <div class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-4 overflow-y-auto hide-scroll shadow-2xl relative">
+        <div class="space-y-1" id="log-container">
+            <span class="text-slate-500 italic">Initializing system trace...</span>
+        </div>
+    </div>
+
+    <div class="mt-4 flex justify-between text-[10px] text-slate-600 uppercase">
+        <span>User: ADMIN (Root)</span>
+        <span>Status: MONITORING ACTIVE</span>
+        <span id="log-count">0 EVENTS</span>
+    </div>
+
+    <script>
+        const Audit = {
+            logs: [],
+
+            init: () => {
+                // Get Logs from Core
+                Audit.logs = JSON.parse(localStorage.getItem('sinet_v7_sys_audit')) || [];
+                document.getElementById('log-count').innerText = Audit.logs.length + " EVENTS";
+                Audit.render();
+            },
+
+            render: () => {
+                const c = document.getElementById('log-container');
+                if(Audit.logs.length === 0) {
+                    c.innerHTML = '<span class="text-slate-600">No logs found. System is clean.</span>';
+                    return;
+                }
+
+                c.innerHTML = Audit.logs.map(l => {
+                    // Color coding based on Action
+                    let color = "text-blue-400"; // Info
+                    if(l.act.includes('DELETE') || l.act.includes('NUKE')) color = "text-red-500 font-bold";
+                    if(l.act.includes('WRITE') || l.act.includes('SAVE')) color = "text-green-400";
+                    if(l.act.includes('SEED')) color = "text-yellow-400";
+
+                    const time = l.ts.replace('T', ' ').split('.')[0];
+
+                    return `
+                    <div class="log-entry flex flex-col md:flex-row gap-2 md:gap-4 p-1 border-b border-slate-800/50 text-xs">
+                        <span class="text-slate-500 w-36 shrink-0">[${time}]</span>
+                        <span class="${color} w-32 shrink-0 font-bold">${l.act}</span>
+                        <span class="text-slate-300 flex-1">${l.desc}</span>
+                        <span class="text-slate-600 w-24 shrink-0 text-right">${l.meta || ''}</span>
+                        <span class="text-slate-700 w-16 shrink-0 text-right"><${l.user}></span>
+                    </div>`;
+                }).join('');
+            },
+
+            export: () => {
+                let csv = "Timestamp,Action,Description,Meta,User\n";
+                Audit.logs.forEach(l => {
+                    csv += `${l.ts},${l.act},"${l.desc}","${l.meta}",${l.user}\n`;
+                });
+                const blob = new Blob([csv], {type: 'text/csv'});
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'system_audit.csv'; a.click();
+            }
+        };
+        Audit.init();
+    </script>
+</body>
+</html>

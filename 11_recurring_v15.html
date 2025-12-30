@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Automatika v15.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f0f9ff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .active-tab { border-bottom: 2px solid #0284c7; color: #0284c7; background: #e0f2fe; }
+        .inactive-tab { color: #64748b; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-slate-800">
+
+    <div class="bg-sky-900 text-white p-4 shadow-lg flex justify-between items-center z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-sky-700">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <div>
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <span class="material-icons-round text-sky-300">autorenew</span> 
+                    PONAVLJAJUĆE FAKTURE
+                </h1>
+                <p class="text-[10px] text-sky-300 uppercase tracking-widest">Automatika za Paušalce</p>
+            </div>
+        </div>
+        <button onclick="Rec.newProfile()" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2">
+            <span class="material-icons-round text-sm">add</span> Novi Ugovor
+        </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-white border-r border-slate-200 flex flex-col min-w-[300px]">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <input id="search-rec" onkeyup="Rec.filter()" class="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm font-bold outline-none focus:ring-2 focus:ring-sky-500" placeholder="🔍 Traži ugovor...">
+            </div>
+            <div id="rec-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div class="w-2/3 bg-slate-50 flex flex-col relative overflow-y-auto hide-scroll">
+            
+            <div class="bg-white border-b border-slate-200 flex shadow-sm sticky top-0 z-20">
+                <button onclick="Rec.switchTab('edit')" id="tab-btn-edit" class="flex-1 py-4 text-xs font-bold uppercase tracking-wider active-tab">📝 Uređivanje Ugovora</button>
+                <button onclick="Rec.switchTab('gen')" id="tab-btn-gen" class="flex-1 py-4 text-xs font-bold uppercase tracking-wider inactive-tab">⚙️ Generator Faktura</button>
+            </div>
+
+            <div id="tab-edit" class="p-8 max-w-3xl mx-auto w-full">
+                
+                <div id="empty-state" class="flex flex-col items-center justify-center text-slate-400 py-20">
+                    <span class="material-icons-round text-6xl mb-4 text-slate-200">description</span>
+                    <p>Izaberite ugovor za izmenu ili kreirajte novi.</p>
+                </div>
+
+                <div id="edit-form" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                        <h2 class="text-lg font-black text-slate-800">DEFINICIJA UGOVORA</h2>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-bold text-slate-500">AKTIVAN:</label>
+                            <input type="checkbox" id="p-active" class="w-5 h-5 accent-sky-600">
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="p-id">
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase">KLIJENT (PAUŠALAC)</label>
+                            <input id="p-client" list="client-list" class="w-full p-3 border rounded-xl font-bold bg-sky-50/50" placeholder="Izaberi klijenta...">
+                            <datalist id="client-list"></datalist>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="col-span-2">
+                                <label class="text-[9px] font-bold text-slate-400 uppercase">USLUGA / ARTIKAL</label>
+                                <input id="p-item" list="art-list" onchange="Rec.fillPrice(this.value)" class="w-full p-3 border rounded-xl font-bold" placeholder="Šta fakturišemo?">
+                                <datalist id="art-list"></datalist>
+                            </div>
+                            <div>
+                                <label class="text-[9px] font-bold text-slate-400 uppercase">IZNOS (RSD)</label>
+                                <input type="number" id="p-price" class="w-full p-3 border rounded-xl font-mono text-right font-bold text-sky-600">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase">NAPOMENA NA FAKTURI</label>
+                            <textarea id="p-note" class="w-full p-3 border rounded-xl text-xs h-20" placeholder="Npr. Usluge za mesec {MESEC}"></textarea>
+                            <p class="text-[9px] text-slate-400 mt-1">* Koristi <b>{MESEC}</b> da sistem automatski upiše tekući mesec (npr. 02/2025).</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex gap-3">
+                        <button onclick="Rec.saveProfile()" class="flex-1 bg-sky-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-sky-700">SAČUVAJ UGOVOR</button>
+                        <button onclick="Rec.deleteProfile()" class="px-4 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 border border-red-200">OBRIŠI</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-gen" class="p-8 max-w-4xl mx-auto w-full hidden">
+                
+                <div class="bg-gradient-to-r from-sky-900 to-blue-900 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+                    <div class="relative z-10 text-center">
+                        <h2 class="text-2xl font-black mb-2">MASOVNI GENERATOR</h2>
+                        <p class="text-sky-200 text-sm mb-6">Izaberite mesec i jednim klikom kreirajte fakture za sve aktivne ugovore.</p>
+                        
+                        <div class="bg-white/10 backdrop-blur-md p-2 rounded-xl inline-flex items-center gap-2 border border-white/20">
+                            <input type="month" id="gen-month" class="bg-transparent text-white font-bold text-lg outline-none p-2 border-r border-white/20">
+                            <button onclick="Rec.previewGen()" class="bg-yellow-400 text-yellow-900 px-6 py-2 rounded-lg font-bold hover:bg-yellow-300 transition shadow-lg">PRIPREMI</button>
+                        </div>
+                    </div>
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-sky-500/30 rounded-full blur-3xl"></div>
+                </div>
+
+                <div id="gen-preview" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700 uppercase text-sm">PREGLED ZA GENERISANJE: <span id="lbl-gen-month" class="text-sky-600"></span></h3>
+                        <button onclick="Rec.runGen()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2 hover:bg-green-700">
+                            <span class="material-icons-round text-sm">rocket_launch</span> START GENERATOR
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 w-8"><input type="checkbox" checked onclick="Rec.toggleAll(this)"></th>
+                                    <th class="p-3">Klijent</th>
+                                    <th class="p-3">Usluga</th>
+                                    <th class="p-3 text-right">Iznos</th>
+                                    <th class="p-3 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gen-list-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const Rec = {
+            profiles: [], clients: [], articles: [], selected: null,
+
+            init: () => {
+                Rec.profiles = SINET.DB.get('recurring') || [];
+                Rec.clients = SINET.DB.get('clients') || [];
+                Rec.articles = SINET.DB.get('articles') || [];
+                
+                // Populate Lists
+                document.getElementById('client-list').innerHTML = Rec.clients.map(c => `<option value="${c.osnovno.naziv}">`).join('');
+                document.getElementById('art-list').innerHTML = Rec.articles.map(a => `<option value="${a.name}">${a.price}</option>`).join('');
+                
+                // Default Month
+                document.getElementById('gen-month').value = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+                Rec.renderList(Rec.profiles);
+            },
+
+            switchTab: (t) => {
+                document.getElementById('tab-edit').classList.add('hidden');
+                document.getElementById('tab-gen').classList.add('hidden');
+                document.getElementById('tab-btn-edit').className = "flex-1 py-4 text-xs font-bold uppercase tracking-wider inactive-tab bg-white";
+                document.getElementById('tab-btn-gen').className = "flex-1 py-4 text-xs font-bold uppercase tracking-wider inactive-tab bg-white";
+                
+                document.getElementById('tab-'+t).classList.remove('hidden');
+                document.getElementById(`tab-btn-${t}`).className = "flex-1 py-4 text-xs font-bold uppercase tracking-wider active-tab";
+            },
+
+            // --- LIST & EDIT ---
+            filter: () => {
+                const term = document.getElementById('search-rec').value.toLowerCase();
+                Rec.renderList(Rec.profiles.filter(p => p.client.toLowerCase().includes(term) || p.item.toLowerCase().includes(term)));
+            },
+
+            renderList: (list) => {
+                const c = document.getElementById('rec-list');
+                if(list.length === 0) { c.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">Nema ugovora.</div>'; return; }
+                c.innerHTML = list.map(p => {
+                    const active = Rec.selected?.id === p.id ? 'bg-sky-50 border-l-4 border-sky-500' : 'hover:bg-slate-50 border-l-4 border-transparent';
+                    const statusDot = p.active ? '<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>' : '<span class="w-2 h-2 rounded-full bg-slate-300 inline-block"></span>';
+                    return `
+                    <div onclick="Rec.select('${p.id}')" class="p-3 border-b border-slate-100 cursor-pointer transition ${active}">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-sm text-slate-800 truncate">${p.client}</h4>
+                            ${statusDot}
+                        </div>
+                        <p class="text-[10px] text-slate-400 flex justify-between">
+                            <span class="truncate max-w-[150px]">${p.item}</span>
+                            <span class="font-bold text-sky-600">${SINET.Util.fmtMoney(p.price)}</span>
+                        </p>
+                    </div>`;
+                }).join('');
+            },
+
+            newProfile: () => {
+                Rec.selected = null;
+                Rec.switchTab('edit');
+                document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('edit-form').classList.remove('hidden');
+                
+                document.getElementById('p-id').value = "";
+                document.getElementById('p-client').value = "";
+                document.getElementById('p-item').value = "";
+                document.getElementById('p-price').value = "";
+                document.getElementById('p-note').value = "Održavanje za mesec {MESEC}";
+                document.getElementById('p-active').checked = true;
+            },
+
+            select: (id) => {
+                const p = Rec.profiles.find(x => x.id === id);
+                if(!p) return;
+                Rec.selected = p;
+                Rec.switchTab('edit');
+                Rec.renderList(Rec.profiles); // Refresh active
+
+                document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('edit-form').classList.remove('hidden');
+
+                document.getElementById('p-id').value = p.id;
+                document.getElementById('p-client').value = p.client;
+                document.getElementById('p-item').value = p.item;
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-note').value = p.note || "";
+                document.getElementById('p-active').checked = p.active;
+            },
+
+            fillPrice: (val) => {
+                const art = Rec.articles.find(a => a.name === val);
+                if(art) document.getElementById('p-price').value = art.price;
+            },
+
+            saveProfile: () => {
+                const id = document.getElementById('p-id').value || SINET.Util.uuid();
+                const p = {
+                    id: id,
+                    client: document.getElementById('p-client').value,
+                    item: document.getElementById('p-item').value,
+                    price: parseFloat(document.getElementById('p-price').value) || 0,
+                    note: document.getElementById('p-note').value,
+                    active: document.getElementById('p-active').checked
+                };
+
+                if(!p.client || !p.item) return alert("Popunite podatke!");
+
+                const idx = Rec.profiles.findIndex(x => x.id === id);
+                if(idx > -1) Rec.profiles[idx] = p; else Rec.profiles.unshift(p);
+
+                SINET.DB.save('recurring', Rec.profiles);
+                Rec.init();
+                Rec.select(id);
+                alert("Ugovor sačuvan!");
+            },
+
+            deleteProfile: () => {
+                if(confirm("Obrisati ovaj ugovor?")) {
+                    const id = document.getElementById('p-id').value;
+                    Rec.profiles = Rec.profiles.filter(x => x.id !== id);
+                    SINET.DB.save('recurring', Rec.profiles);
+                    location.reload();
+                }
+            },
+
+            // --- GENERATOR LOGIC ---
+            previewGen: () => {
+                const month = document.getElementById('gen-month').value;
+                if(!month) return alert("Izaberite mesec!");
+                
+                document.getElementById('lbl-gen-month').innerText = month;
+                const activeProfiles = Rec.profiles.filter(p => p.active);
+                
+                // Check duplicates (da li već postoji faktura za ovaj mesec?)
+                const docs = SINET.DB.get('docs') || [];
+                const monthStr = month.split('-').reverse().join('.'); // YYYY-MM -> MM.YYYY (za proveru u napomeni ili datumu)
+                // Jednostavna provera: tražimo u napomeni string meseca (nesavršeno ali radi ako se koristi šablon)
+                // Bolje: Provera po datumu fakture
+                
+                const list = document.getElementById('gen-list-body');
+                list.innerHTML = activeProfiles.map((p, i) => {
+                    // Check logic: Da li postoji faktura za ovog klijenta u ovom mesecu sa istim iznosom?
+                    const exists = docs.some(d => d.client.name === p.client && d.date.startsWith(month) && SINET.Util.parseMoney(d.total) === p.price);
+                    const status = exists ? '<span class="text-red-500 font-bold">VEĆ POSTOJI!</span>' : '<span class="text-green-500 font-bold">SPREMNO</span>';
+                    const chk = exists ? '' : 'checked';
+                    
+                    return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 text-center"><input type="checkbox" class="gen-chk" value="${p.id}" ${chk}></td>
+                        <td class="p-3 font-bold text-slate-700">${p.client}</td>
+                        <td class="p-3 text-slate-500">${p.item}</td>
+                        <td class="p-3 text-right font-mono font-bold">${SINET.Util.fmtMoney(p.price)}</td>
+                        <td class="p-3 text-center text-xs">${status}</td>
+                    </tr>`;
+                }).join('');
+
+                document.getElementById('gen-preview').classList.remove('hidden');
+            },
+
+            toggleAll: (el) => { document.querySelectorAll('.gen-chk').forEach(c => c.checked = el.checked); },
+
+            runGen: () => {
+                const checked = Array.from(document.querySelectorAll('.gen-chk:checked')).map(c => c.value);
+                if(checked.length === 0) return alert("Nema izabranih ugovora!");
+
+                const monthVal = document.getElementById('gen-month').value; // YYYY-MM
+                const [year, month] = monthVal.split('-');
+                const docDate = `${monthVal}-01`;
+                const dueDays = 7;
+                const dueDateObj = new Date(year, month-1, 1 + dueDays);
+                const dueDate = dueDateObj.toISOString().split('T')[0];
+                const displayMonth = `${month}/${year}`;
+
+                const docs = SINET.DB.get('docs') || [];
+                let newCount = 0;
+
+                // Get Config for PDV calc
+                const conf = SINET.Config.load(); // Assume standard tax if not in item
+
+                checked.forEach(pid => {
+                    const p = Rec.profiles.find(x => x.id === pid);
+                    if(p) {
+                        // Calc Num
+                        const yearCnt = docs.filter(d => d.type === 'FAKTURA' && d.date.startsWith(year)).length + 1 + newCount;
+                        const docNum = `${year}-${String(yearCnt).padStart(3,'0')}`;
+                        
+                        // Parse Note
+                        const finalNote = p.note.replace('{MESEC}', displayMonth);
+
+                        // Get Client Info (PIB)
+                        const clientData = Rec.clients.find(c => c.osnovno.naziv === p.client);
+                        const pib = clientData ? clientData.osnovno.pib : "";
+
+                        const newDoc = {
+                            id: SINET.Util.uuid(),
+                            type: 'FAKTURA',
+                            num: docNum,
+                            date: docDate,
+                            client: { name: p.client, pib: pib },
+                            total: SINET.Util.fmtMoney(p.price) + " RSD",
+                            total_net: SINET.Util.fmtMoney(p.price / 1.2), // Approx net
+                            items: [{
+                                type: 'prod',
+                                desc: p.item,
+                                qty: 1,
+                                price: p.price / 1.2 // Store Net price usually, but simple logic here
+                            }],
+                            meta: {
+                                due: dueDate,
+                                note: finalNote,
+                                currency: "RSD"
+                            },
+                            sef_status: 'NEW'
+                        };
+                        
+                        // Fix item price structure to match core logic (Store Price usually is w/o VAT in inputs, but here we define Total)
+                        // Let's assume Profile Price is WITH VAT.
+                        // Core expects items to have price. Invoice logic sums item.price * qty.
+                        // So we store Net Price in item.
+                        newDoc.items[0].price = p.price / 1.2; 
+
+                        docs.unshift(newDoc);
+                        
+                        // Smanji lager? (Samo ako je roba, za usluge ne mora, ali SINET skida sve)
+                        // SINET.Stock.addEntry(p.item, -1, `Faktura ${docNum}`); // Opciono
+                        
+                        newCount++;
+                    }
+                });
+
+                SINET.DB.save('docs', docs);
+                alert(`✅ USPEŠNO GENERISANO ${newCount} FAKTURA!`);
+                window.location.href = "index.html"; // Nazad na dashboard
+            }
+        };
+        Rec.init();
+    </script>
+</body>
+</html>

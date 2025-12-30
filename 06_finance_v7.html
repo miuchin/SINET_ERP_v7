@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Finansije v9.3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @media print {
+            body { background: white; padding: 0; }
+            #header, #tabs, #payment-form, #controls, .no-print { display: none !important; }
+            #ios-print-view { display: block !important; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th, td { border: 1px solid #000; padding: 4px; }
+            .ios-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header" class="bg-teal-900 text-white p-4 sticky top-0 z-50 shadow-lg flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-teal-700">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <h1 class="text-lg font-bold">Finansije</h1>
+        </div>
+        <button onclick="Fin.printIOS()" class="bg-teal-600 px-3 py-2 rounded-lg text-xs font-bold uppercase shadow flex items-center gap-2">
+            <span class="material-icons-round text-sm">print</span> IOS
+        </button>
+    </div>
+
+    <div id="tabs" class="flex gap-2 p-4 bg-white border-b border-slate-200 overflow-x-auto hide-scroll">
+        <button onclick="Fin.tab('payments')" id="btn-payments" class="px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-xs font-bold whitespace-nowrap border border-teal-100">💰 UPLATE</button>
+        <button onclick="Fin.tab('ios')" id="btn-ios" class="px-4 py-2 bg-white text-slate-500 rounded-full text-xs font-bold whitespace-nowrap border border-slate-200">📑 IOS OBRASCI</button>
+    </div>
+
+    <div id="tab-payments" class="p-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6" id="payment-form">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">KNJIŽENJE UPLATE</h3>
+            <div class="space-y-4">
+                <input type="date" id="p-date" class="w-full p-2 border rounded font-bold">
+                
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">KLIJENT (UPLATILAC)</label>
+                    <input list="cli-list" id="p-client" onchange="Fin.analyzeClient(this.value)" class="w-full p-2 border rounded font-bold" placeholder="Pretraži klijenta...">
+                    <datalist id="cli-list"></datalist>
+                </div>
+
+                <div id="debt-monitor" class="hidden slide-in p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold uppercase text-slate-500">UKUPAN DUG:</span>
+                        <span id="dm-status" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200">STATUS</span>
+                    </div>
+                    <div class="text-2xl font-black text-slate-800 tracking-tight" id="dm-amount">0.00 RSD</div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="dm-bar" class="bg-teal-500 h-full w-0 transition-all duration-500"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-[9px] font-bold text-slate-400">
+                        <span>PLAĆENO: <span id="dm-paid">0%</span></span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 items-start">
+                    <div class="w-1/2">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">PO FAKTURI</label>
+                        <input list="inv-list" id="p-ref" onchange="Fin.checkInvoiceDetail(this.value)" class="w-full p-2 border rounded font-mono text-sm" placeholder="Izaberi...">
+                        <datalist id="inv-list"></datalist>
+                        <div id="inv-detail" class="hidden mt-1 text-[10px] font-bold text-right slide-in">
+                            Preostalo: <span id="inv-remaining" class="text-red-600 font-mono text-xs">0.00</span>
+                        </div>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">IZNOS (RSD)</label>
+                        <input type="number" id="p-amount" class="w-full p-2 border rounded font-mono font-bold text-teal-600 text-lg" placeholder="0.00">
+                    </div>
+                </div>
+                <button onclick="Fin.addPayment()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">PROKNJIŽI UPLATU</button>
+            </div>
+        </div>
+        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-2">POSLEDNJE UPLATE</h3>
+        <div id="pay-list" class="space-y-2"></div>
+    </div>
+
+    <div id="tab-ios" class="p-4 hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center" id="controls">
+            <h3 class="font-bold text-slate-800 mb-4 uppercase">GENERATOR IOS OBRAZCA</h3>
+            <div class="space-y-3 text-left">
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400 uppercase">PARTNER</label>
+                    <input list="cli-list" id="ios-client" class="w-full p-3 border rounded-xl font-bold" placeholder="Pretraži klijenta...">
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-slate-400 uppercase">DATUM PRESEKA</label>
+                    <input type="date" id="ios-date" class="w-full p-3 border rounded-xl font-bold">
+                </div>
+            </div>
+            <button onclick="Fin.genIOS()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg mt-6 flex items-center justify-center gap-2">
+                <span class="material-icons-round">description</span> GENERIŠI IZVOD
+            </button>
+        </div>
+
+        <div id="ios-print-view" class="hidden bg-white p-8 mt-6 shadow-xl print:shadow-none print:mt-0">
+            <div class="ios-header flex justify-between items-start border-b-2 border-black pb-4 mb-4">
+                <div class="text-sm"><p class="font-bold" id="my-firm">MOJA FIRMA</p><p id="my-addr">Adresa</p><p>PIB: <span id="my-pib">-</span></p></div>
+                <div class="text-right text-sm"><h1 class="text-xl font-black mb-1">IOS OBRAZAC</h1><p>Datum: <span id="ios-print-date"></span></p></div>
+            </div>
+            <div class="mb-6 border p-4 bg-slate-50 print:bg-white print:border-black">
+                <p class="text-xs uppercase font-bold text-slate-500">POSLOVNI PARTNER (DUŽNIK):</p>
+                <h2 class="text-lg font-bold" id="partner-name">NAZIV PARTNERA</h2>
+                <p id="partner-addr">Adresa</p><p>PIB: <span id="partner-pib">-</span></p>
+            </div>
+            <p class="text-xs mb-4 text-justify">Uvidom u našu evidenciju na dan <b id="ios-date-text"></b>, konstatovali smo sledeće stanje otvorenih stavki (potraživanja i obaveza):</p>
+            <table class="w-full mb-6 text-xs">
+                <thead class="bg-slate-100 font-bold uppercase print:bg-gray-200">
+                    <tr><th class="text-left p-2">Dokument</th><th class="text-left p-2">Datum</th><th class="text-left p-2">Valuta</th><th class="text-right p-2">Duguje</th><th class="text-right p-2">Potražuje</th><th class="text-right p-2">Saldo</th></tr>
+                </thead>
+                <tbody id="ios-body"></tbody>
+                <tfoot class="font-bold border-t-2 border-black">
+                    <tr><td colspan="3" class="text-right p-2">UKUPNO:</td><td class="text-right p-2" id="sum-d">0.00</td><td class="text-right p-2" id="sum-p">0.00</td><td class="text-right p-2" id="sum-s">0.00</td></tr>
+                </tfoot>
+            </table>
+            <div class="text-[10px] space-y-2 mb-8"><p>Molimo Vas da saglasno Zakonu o računovodstvu usaglasite stanje vaših obaveza i da nam u roku od 5 dana vratite jedan overen primerak.</p><p>Ukoliko ne primimo odgovor, smatraćemo da je stanje usaglašeno.</p></div>
+            <div class="flex justify-between items-end mt-10 pt-4 gap-10">
+                <div class="text-center w-1/2"><div class="border-b border-black h-10 mb-1"></div><p class="text-[10px] uppercase font-bold">Pošiljalac izvoda (M.P.)</p></div>
+                <div class="text-center w-1/2"><div class="border-b border-black h-10 mb-1"></div><p class="text-[10px] uppercase font-bold">Potvrđujem saglasnost (M.P.)</p></div>
+            </div>
+            <div class="mt-8 pt-4 border-t border-dashed border-slate-300 print:border-black"><p class="text-[10px] font-bold">NAPOMENA / OSPORAVANJE:</p><div class="h-16 border-b border-slate-300 print:border-black"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const Fin = {
+            data: { pay: [], docs: [], clients: [] },
+            config: {},
+
+            init: () => {
+                Fin.config = SINET.Config.load();
+                Fin.data.pay = SINET.DB.get('payments');
+                Fin.data.docs = SINET.DB.get('docs');
+                Fin.data.clients = SINET.DB.get('clients');
+
+                document.getElementById('cli-list').innerHTML = Fin.data.clients.map(c => `<option value="${c.osnovno.naziv}">`).join('');
+                document.getElementById('p-date').valueAsDate = new Date();
+                document.getElementById('ios-date').valueAsDate = new Date();
+                
+                Fin.renderPayments();
+
+                // --- OVO JE DEO KOJI JE FALIO: DEEP LINK IZ CRM-A ---
+                const targetClient = localStorage.getItem('sinet_temp_ios_target');
+                if (targetClient) {
+                    Fin.tab('ios'); // Prebaci na IOS tab
+                    document.getElementById('ios-client').value = targetClient; // Popuni polje
+                    localStorage.removeItem('sinet_temp_ios_target'); // Očisti
+                    // Opciono: Odmah generiši IOS
+                    setTimeout(() => Fin.genIOS(), 300);
+                }
+            },
+
+            analyzeClient: (clientName) => {
+                if(!clientName) { document.getElementById('debt-monitor').classList.add('hidden'); return; }
+                const invoices = Fin.data.docs.filter(d => d.client.name === clientName && d.type === 'FAKTURA');
+                const invList = document.getElementById('inv-list'); invList.innerHTML = "";
+                let totalDebt = 0;
+
+                invoices.forEach(inv => {
+                    const amount = SINET.Util.parseMoney(inv.total); totalDebt += amount;
+                    const paidForInv = Fin.data.pay.filter(p => p.ref === inv.num).reduce((s,p) => s+p.amount, 0);
+                    const remaining = amount - paidForInv;
+                    const opt = document.createElement('option'); opt.value = inv.num; opt.label = remaining <= 1 ? `✅ PLAĆENO` : `Dug: ${SINET.Util.fmtMoney(remaining)}`; invList.appendChild(opt);
+                });
+
+                const payments = Fin.data.pay.filter(p => p.client === clientName).reduce((s,p) => s+p.amount, 0);
+                const knjizna = Fin.data.docs.filter(d => d.client.name === clientName && d.type === 'KNJIŽNO ODOBRENJE').reduce((s,d) => s + SINET.Util.parseMoney(d.total), 0);
+                const totalPaid = payments + Math.abs(knjizna);
+                const currentDebt = totalDebt - totalPaid;
+                const percentPaid = totalDebt > 0 ? (totalPaid / totalDebt) * 100 : 100;
+
+                const dm = document.getElementById('debt-monitor'); dm.classList.remove('hidden');
+                document.getElementById('dm-amount').innerText = SINET.Util.fmtMoney(currentDebt) + " RSD";
+                document.getElementById('dm-paid').innerText = Math.round(percentPaid) + "%";
+                document.getElementById('dm-bar').style.width = Math.min(percentPaid, 100) + "%";
+                
+                const statusEl = document.getElementById('dm-status');
+                if(currentDebt <= 100) { dm.className = "p-3 rounded-xl border border-green-200 bg-green-50 mb-2 slide-in"; statusEl.innerText = "UREDNO"; statusEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800"; document.getElementById('dm-bar').className = "bg-green-500 h-full w-0 transition-all duration-500"; } 
+                else { dm.className = "p-3 rounded-xl border border-red-200 bg-red-50 mb-2 slide-in"; statusEl.innerText = "DUGUJE"; statusEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-200 text-red-800"; document.getElementById('dm-bar').className = "bg-red-500 h-full w-0 transition-all duration-500"; }
+            },
+
+            checkInvoiceDetail: (invNum) => {
+                const detailEl = document.getElementById('inv-detail');
+                const remainEl = document.getElementById('inv-remaining');
+                const amountInput = document.getElementById('p-amount');
+                if(!invNum) { detailEl.classList.add('hidden'); return; }
+                const inv = Fin.data.docs.find(d => d.num === invNum && d.type === 'FAKTURA');
+                if(!inv) return;
+                const total = SINET.Util.parseMoney(inv.total);
+                const paid = Fin.data.pay.filter(p => p.ref === invNum).reduce((s,p) => s+p.amount, 0);
+                const remaining = total - paid;
+                detailEl.classList.remove('hidden'); remainEl.innerText = SINET.Util.fmtMoney(remaining) + " RSD";
+                if(remaining > 0 && amountInput.value === "") amountInput.value = remaining;
+            },
+
+            tab: (t) => {
+                document.getElementById('tab-payments').classList.add('hidden');
+                document.getElementById('tab-ios').classList.add('hidden');
+                document.getElementById('tab-'+t).classList.remove('hidden');
+                document.getElementById('btn-payments').className = t==='payments' ? "px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-xs font-bold border border-teal-100" : "px-4 py-2 bg-white text-slate-500 rounded-full text-xs font-bold border border-slate-200";
+                document.getElementById('btn-ios').className = t==='ios' ? "px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-xs font-bold border border-teal-100" : "px-4 py-2 bg-white text-slate-500 rounded-full text-xs font-bold border border-slate-200";
+            },
+
+            addPayment: () => {
+                const p = { id: SINET.Util.uuid(), date: document.getElementById('p-date').value, client: document.getElementById('p-client').value, amount: parseFloat(document.getElementById('p-amount').value), ref: document.getElementById('p-ref').value, note: "Ručni unos" };
+                if(!p.client || !p.amount) return alert("Popunite podatke!");
+                Fin.data.pay.unshift(p); SINET.DB.save('payments', Fin.data.pay);
+                Fin.renderPayments(); document.getElementById('p-amount').value = ""; document.getElementById('p-ref').value = ""; document.getElementById('inv-detail').classList.add('hidden');
+                Fin.analyzeClient(p.client); alert("Uplata proknjižena!");
+            },
+
+            renderPayments: () => {
+                const list = document.getElementById('pay-list');
+                list.innerHTML = Fin.data.pay.slice(0,10).map(p => `<div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm"><div><span class="text-[10px] font-bold text-slate-400">${SINET.Util.fmtDate(p.date)}</span><h4 class="font-bold text-slate-700 text-sm">${p.client}</h4><p class="text-[10px] text-teal-600">Ref: ${p.ref}</p></div><span class="font-mono font-bold text-teal-600">+${SINET.Util.fmtMoney(p.amount)}</span></div>`).join('');
+            },
+
+            printIOS: () => {
+                let partner = document.getElementById('partner-name').innerText.replace(/ /g, '_').toUpperCase();
+                const date = document.getElementById('ios-date').value;
+                document.title = `IOS_${partner}_${date}`;
+                window.print();
+            },
+
+            genIOS: () => {
+                const clientName = document.getElementById('ios-client').value;
+                const dateLimit = document.getElementById('ios-date').value;
+                if(!clientName) return alert("Izaberite partnera!");
+                const clientDocs = Fin.data.docs.filter(d => d.client.name === clientName && d.date <= dateLimit);
+                const clientPays = Fin.data.pay.filter(p => p.client === clientName && p.date <= dateLimit);
+                const clientData = Fin.data.clients.find(c => c.osnovno.naziv === clientName);
+                
+                let timeline = [];
+                clientDocs.forEach(d => {
+                    const isKO = d.type === 'KNJIŽNO ODOBRENJE';
+                    let amount = SINET.Util.parseMoney(d.total);
+                    if(isKO && amount > 0) amount = -amount; // Ensure negative for calc logic
+                    timeline.push({ date: d.date, desc: `${d.type} ${d.num}`, due: d.meta.due || d.date, debit: isKO ? 0 : amount, credit: isKO ? Math.abs(amount) : 0, type: 'doc' });
+                });
+                clientPays.forEach(p => { timeline.push({ date: p.date, desc: `IZVOD / UPLATA (Ref: ${p.ref})`, due: p.date, debit: 0, credit: p.amount, type: 'pay' }); });
+                timeline.sort((a,b) => a.date.localeCompare(b.date));
+
+                const header = SINET.Config.load();
+                document.getElementById('my-firm').innerText = header.firma.naziv; document.getElementById('my-addr').innerText = `${header.adresa.ulica}, ${header.adresa.mesto}`; document.getElementById('my-pib').innerText = header.firma.pib; document.getElementById('ios-print-date').innerText = SINET.Util.fmtDate(new Date().toISOString().split('T')[0]); document.getElementById('ios-date-text').innerText = SINET.Util.fmtDate(dateLimit);
+                if(clientData) { document.getElementById('partner-name').innerText = clientData.osnovno.naziv; document.getElementById('partner-addr').innerText = clientData.kontakt.adresa; document.getElementById('partner-pib').innerText = clientData.osnovno.pib; } else { document.getElementById('partner-name').innerText = clientName; }
+
+                let saldo = 0; let sumD = 0; let sumP = 0;
+                const rows = timeline.map(t => {
+                    saldo += (t.debit - t.credit); sumD += t.debit; sumP += t.credit;
+                    return `<tr><td>${t.desc}</td><td>${SINET.Util.fmtDate(t.date)}</td><td>${SINET.Util.fmtDate(t.due)}</td><td class="text-right">${t.debit ? SINET.Util.fmtMoney(t.debit) : ''}</td><td class="text-right">${t.credit ? SINET.Util.fmtMoney(t.credit) : ''}</td><td class="text-right font-bold">${SINET.Util.fmtMoney(saldo)}</td></tr>`;
+                }).join('');
+
+                document.getElementById('ios-body').innerHTML = rows;
+                document.getElementById('sum-d').innerText = SINET.Util.fmtMoney(sumD);
+                document.getElementById('sum-p').innerText = SINET.Util.fmtMoney(sumP);
+                document.getElementById('sum-s').innerText = SINET.Util.fmtMoney(saldo);
+                document.getElementById('ios-print-view').classList.remove('hidden'); document.getElementById('controls').classList.add('hidden');
+            }
+        };
+        Fin.init();
+    </script>
+</body>
+</html>

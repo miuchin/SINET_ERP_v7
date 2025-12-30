@@ -1,5 +1,3 @@
-# SINET_ERP_v7
-**SINET ERP** je besplatan, moderan i munjevito brz poslovni sistem koji radi direktno u vašem pretraživaču (browseru). Nema servera, nema pretplate, nema instalacije. Vaši podaci su samo vaši.
 # 🚀 SINET ERP - Enterprise Resource Planning (Local-First)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -71,4 +69,3 @@ Slobodno ga koristite, menjajte i delite.
 
 **Autor:** Srećko & Gemini AI 🤖
 **Slogan:** Svetski, a Naše!
-

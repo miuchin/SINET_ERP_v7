@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="sr" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SINET Uputstvo za upotrebu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="sinet_core_v7.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        SINET.Theme.apply(); 
+    </script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { transition: background-color 0.3s; }
+        .dark body { background-color: #0f172a; color: #e2e8f0; }
+        .dark .bg-white { background-color: #1e293b !important; color: #e2e8f0; border-color: #334155; }
+        .dark .text-slate-800 { color: #f8fafc !important; }
+        .dark .text-slate-600 { color: #cbd5e1 !important; }
+        .chapter { display: none; }
+        .chapter.active { display: block; }
+        .nav-item.active { background-color: #3b82f6; color: white; }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <aside class="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col h-full z-10 overflow-y-auto">
+        <div class="p-6 border-b border-slate-100">
+            <h1 class="text-xl font-black italic text-slate-800">SINET <span class="text-blue-600">HELP</span></h1>
+            <p class="text-xs text-slate-400">Priručnik v1.0</p>
+        </div>
+        <nav class="p-4 space-y-1 text-sm font-bold text-slate-600">
+            <button onclick="show('intro')" id="btn-intro" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100 active">👋 Uvod i Početak</button>
+            <button onclick="show('dash')" id="btn-dash" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">📊 Kontrolna Tabla</button>
+            <button onclick="show('inv')" id="btn-inv" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">📄 Fakture i SEF</button>
+            <button onclick="show('stock')" id="btn-stock" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">📦 Magacin i Artikli</button>
+            <button onclick="show('auto')" id="btn-auto" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">🔄 Automatika (Paušal)</button>
+            <button onclick="show('task')" id="btn-task" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">✅ Zadaci i Porezi</button>
+            <button onclick="show('safety')" id="btn-safety" class="nav-item w-full text-left p-3 rounded-lg hover:bg-slate-100">🛡️ Bezbednost i Backup</button>
+            <div class="pt-4 border-t mt-4">
+                <a href="index.html" class="block w-full text-center p-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700">NAZAD U PROGRAM</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-8 md:p-12 overflow-y-auto">
+        
+        <div id="intro" class="chapter active max-w-3xl">
+            <h1 class="text-4xl font-black text-slate-800 mb-6">Dobrodošli u SINET ERP</h1>
+            <p class="text-lg text-slate-600 mb-4">Čestitamo! Upravo koristite najsavremeniji <b>Local-First</b> poslovni sistem. Ovo nije običan program - ovo je vaša firma u džepu.</p>
+            
+            <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 mb-8">
+                <h3 class="font-bold text-blue-800 mb-2">🚀 Šta SINET čini posebnim?</h3>
+                <ul class="list-disc list-inside space-y-2 text-blue-700">
+                    <li><b>Bez pretplate:</b> Program je vaš zauvek.</li>
+                    <li><b>Bezbedan:</b> Podaci su samo na vašem uređaju, ne na tuđem serveru.</li>
+                    <li><b>Radi bez neta:</b> Možete fakturisati i u avionu.</li>
+                    <li><b>Povezan:</b> Generiše XML za SEF i QR kod za plaćanje.</li>
+                </ul>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-4">Prvi koraci</h3>
+            <p class="text-slate-600">Pre nego što počnete, idite u <b>Podešavanja (⚙️)</b> i unesite podatke svoje firme (Naziv, PIB, Žiro račun). To će se pojavljivati na svim fakturama.</p>
+        </div>
+
+        <div id="dash" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Kontrolna Tabla (Dashboard)</h1>
+            <p class="text-slate-600 mb-6">Ovo je vaš komandni centar. Čim otvorite aplikaciju, vidite zdravlje vaše firme.</p>
+            
+            <div class="space-y-6">
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h3 class="font-bold text-lg">Finansijski Presek</h3>
+                    <p class="text-slate-500">Veliki broj koji vidite je vaša <b>Neto Dobit</b> (Prihodi - Rashodi). Ako je zeleno, odlično! Ako je crveno, smanjite troškove.</p>
+                </div>
+                <div class="border-l-4 border-amber-500 pl-4">
+                    <h3 class="font-bold text-lg">Moji Zadaci</h3>
+                    <p class="text-slate-500">Mali widget desno prikazuje 3 najhitnija zadatka. Kliknite na njih da odete u Task Menadžer.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="inv" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Fakture i SEF</h1>
+            <p class="text-slate-600 mb-6">Srce sistema. Ovde pravite račune koji izgledaju svetski.</p>
+            
+            <h3 class="text-xl font-bold mb-2">Kako napraviti fakturu?</h3>
+            <ol class="list-decimal list-inside space-y-3 text-slate-600 mb-8">
+                <li>Kliknite na <b>Nova Faktura</b>.</li>
+                <li>Izaberite Klijenta (ili unesite novog).</li>
+                <li>Dodajte stavke (usluge ili robu). Sistem sam vuče cene.</li>
+                <li>Proverite iznos. Sistem sam računa PDV.</li>
+                <li>Kliknite <b>SAČUVAJ</b> (Floppy disk ikonica).</li>
+            </ol>
+
+            <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-200">
+                <h3 class="font-bold text-indigo-800 mb-2">✨ Magične Funkcije</h3>
+                <p class="text-indigo-700 mb-2"><b>Dugme "SEF XML":</b> Jednim klikom dobijate fajl spreman za upload na državni portal e-Faktura.</p>
+                <p class="text-indigo-700"><b>Dugme "POŠALJI":</b> Otvara vaš email sa već napisanim tekstom i naslovom za klijenta.</p>
+            </div>
+        </div>
+
+        <div id="stock" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Magacin i Artikli</h1>
+            <p class="text-slate-600 mb-6">Vodite evidenciju robe kao profesionalac. Nema više "fali mi roba".</p>
+            
+            <h3 class="text-xl font-bold mb-2">Ključni pojmovi:</h3>
+            <ul class="space-y-4 text-slate-600">
+                <li><b>Master Data:</b> Ovde unosite artikle, nabavne cene, marže. Sistem sam računa prodajnu cenu.</li>
+                <li><b>Lager Lista:</b> Trenutno stanje. Ako je broj <span class="text-red-500 font-bold">crven</span>, vreme je za nabavku!</li>
+                <li><b>Kartica Artikla:</b> Kliknite na bilo koji artikal da vidite istoriju: Kome je prodat, kada je kupljen, gde je nestao.</li>
+            </ul>
+        </div>
+
+        <div id="auto" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Automatika (Za Paušalce)</h1>
+            <p class="text-slate-600 mb-6">Ako svakog meseca šaljete iste račune (održavanje, zakup, knjigovodstvo), ovo je spas.</p>
+            
+            <div class="grid gap-4">
+                <div class="bg-white p-4 shadow rounded-lg border">
+                    <span class="font-bold text-blue-600">Korak 1:</span> Definišite <b>Ugovor</b> (Ko, Šta, Koliko para).
+                </div>
+                <div class="bg-white p-4 shadow rounded-lg border">
+                    <span class="font-bold text-blue-600">Korak 2:</span> Idite na tab "Generator".
+                </div>
+                <div class="bg-white p-4 shadow rounded-lg border">
+                    <span class="font-bold text-blue-600">Korak 3:</span> Izaberite mesec i kliknite <b>START</b>.
+                </div>
+            </div>
+            <p class="mt-4 text-slate-500 italic">Sistem će za 3 sekunde napraviti 50, 100 ili 500 faktura odjednom!</p>
+        </div>
+
+        <div id="task" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Zadaci i Poreski Kalendar</h1>
+            <p class="text-slate-600 mb-6">SINET misli umesto vas. Ne dozvolite da zaboravite porez.</p>
+            
+            <h3 class="text-xl font-bold mb-2">Automatski Kalendar</h3>
+            <p class="text-slate-600 mb-4">Generator automatski kreira podsetnike za:</p>
+            <ul class="list-disc list-inside text-slate-600 mb-6">
+                <li>PDV (15. u mesecu)</li>
+                <li>Plate i doprinose (1. u mesecu)</li>
+                <li>Porez na dobit</li>
+            </ul>
+            <p class="text-slate-600">Možete dodavati i svoje zadatke ("Kupi toner", "Zovi Peru").</p>
+        </div>
+
+        <div id="safety" class="chapter max-w-3xl">
+            <h1 class="text-3xl font-black text-slate-800 mb-6">Bezbednost i Podaci</h1>
+            
+            <div class="bg-red-50 p-6 rounded-xl border border-red-200 mb-8">
+                <h3 class="font-bold text-red-800 mb-2">⚠️ VAŽNO UPOZORENJE</h3>
+                <p class="text-red-700">Pošto SINET radi u browseru, ako obrišete "History/Cache" browsera, možete izgubiti podatke!</p>
+            </div>
+
+            <h3 class="text-xl font-bold mb-2">Kako se zaštititi?</h3>
+            <p class="text-slate-600 mb-4">Redovno radite <b>BACKUP</b> (Podešavanja -> Backup). To će vam skinuti jedan fajl na kompjuter. Taj fajl je vaša firma. Čuvajte ga na mailu ili USB-u.</p>
+
+            <h3 class="text-xl font-bold mb-2">Audit Log (Crna kutija)</h3>
+            <p class="text-slate-600">U meniju "Sistem" imate Audit Log. Tu piše svaka promena. Ako neko obriše fakturu, tu će pisati ko je to uradio i kada.</p>
+        </div>
+
+    </main>
+
+    <script>
+        function show(id) {
+            document.querySelectorAll('.chapter').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-blue-500', 'text-white'));
+            
+            document.getElementById(id).classList.add('active');
+            const btn = document.getElementById('btn-' + id);
+            btn.classList.add('active', 'bg-blue-500', 'text-white');
+            btn.classList.remove('hover:bg-slate-100');
+        }
+    </script>
+</body>
+</html>

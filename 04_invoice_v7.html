@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SINET Dokument v15.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="sinet_core_v7.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        body { background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 100px; }
+        .inp { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; background: white; }
+        .btn-icon { padding: 8px; border-radius: 50%; transition: 0.2s; }
+        .btn-icon:hover { background: rgba(0,0,0,0.05); }
+        .print-only { display: none; }
+
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white; padding: 0; font-size: 11px; color: black !important; -webkit-print-color-adjust: exact; }
+            .no-print, #app-header, #archive-search, #add-buttons, .btn-icon, #client-search-wrapper, textarea { display: none !important; }
+            .print-only { display: block !important; }
+            #invoice-paper { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; }
+            input, select { border: none !important; background: transparent !important; padding: 0 !important; width: auto !important; resize: none; appearance: none; -webkit-appearance: none; font-weight: bold !important; color: black !important; text-align: right; }
+            #client-display input { text-align: left; }
+            #ref-input { text-align: right !important; font-weight: bold; font-style: italic; }
+            #print-header-row { display: flex !important; flex-direction: row !important; justify-content: space-between !important; width: 100% !important; margin-bottom: 20px !important; }
+            .w-half-print { width: 48% !important; flex: 0 0 48% !important; }
+            .header-right-item { display: flex !important; justify-content: space-between !important; width: 100% !important; border-bottom: 1px dotted #ccc; padding-bottom: 2px; margin-bottom: 2px; }
+            .header-right-item input { text-align: right !important; }
+            .table-header { background-color: #f3f4f6 !important; border-bottom: 2px solid #000 !important; font-size: 10px !important; }
+            td { padding: 4px 2px !important; border-bottom: 1px solid #ddd; vertical-align: top; }
+            #ips-container { display: block !important; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
+            #ips-qr { display: block !important; float: right; }
+            #ips-qr img { width: 90px !important; height: 90px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-header" class="bg-blue-900 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center no-print">
+        <div class="flex items-center gap-3">
+            <button onclick="window.location.href='index.html'" class="p-2 rounded-full hover:bg-blue-700">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <h1 class="text-lg font-bold">Faktura</h1>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="Invoice.sendEmail()" class="bg-indigo-600 text-white px-3 py-1 rounded text-xs uppercase font-bold border border-indigo-400 hover:bg-indigo-500 flex items-center gap-1 shadow-lg">
+                <span class="material-icons-round text-sm">email</span> POŠALJI
+            </button>
+            <button id="btn-sef" onclick="Invoice.exportXML()" class="bg-blue-700 text-white px-3 py-1 rounded text-xs uppercase font-bold border border-blue-500 hover:bg-blue-600 flex items-center gap-1">
+                <span class="material-icons-round text-sm">code</span> SEF XML
+            </button>
+            <button onclick="Invoice.reset()" class="bg-blue-800 px-3 py-1 rounded text-xs uppercase font-bold">Nova</button>
+            <button onclick="Invoice.print()" class="bg-white text-blue-900 px-3 py-1 rounded text-xs uppercase font-bold flex items-center gap-1">
+                <span class="material-icons-round text-sm">print</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="archive-search" class="bg-blue-50 border-b border-blue-100 p-3 flex justify-center no-print">
+        <div class="relative w-full max-w-lg flex items-center gap-2">
+            <span class="material-icons-round text-blue-400">history</span>
+            <input list="docs-list" onchange="Invoice.loadFromArchive(this.value)" class="w-full p-2 rounded-lg border border-blue-200 text-sm font-bold text-blue-900 placeholder-blue-300 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Učitaj postojeću fakturu...">
+            <datalist id="docs-list"></datalist>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl min-h-screen p-6 md:p-10 m-2 md:m-6 rounded-xl" id="invoice-paper">
+        
+        <div id="print-header-row" class="flex flex-col md:flex-row justify-between items-start border-b-2 border-slate-800 pb-4 mb-6 gap-6">
+            <div class="w-full md:w-1/2 w-half-print">
+                <img id="print-logo" src="" class="h-16 object-contain mb-3 hidden">
+                <h2 id="lbl-naziv" class="text-lg font-black uppercase text-slate-800 leading-tight">MOJA FIRMA</h2>
+                <div class="text-xs text-slate-600 space-y-0.5 mt-2">
+                    <p id="lbl-adresa">Adresa...</p>
+                    <div class="flex gap-3"><span>PIB: <b id="lbl-pib">-</b></span><span>MB: <b id="lbl-mb">-</b></span></div>
+                    <p>TR: <b id="lbl-racun">-</b></p>
+                </div>
+            </div>
+            
+            <div class="w-full md:w-1/2 w-half-print mt-4 md:mt-0 flex flex-col items-end text-right">
+                <select id="doc-type" onchange="Invoice.toggleRef()" class="text-xl md:text-2xl font-black uppercase text-blue-900 bg-transparent border-none outline-none text-right w-full cursor-pointer p-0 m-0">
+                    <option>FAKTURA</option><option>PROFAKTURA</option><option>AVANSNI RAČUN</option><option>OTPREMNICA</option><option class="text-red-600 font-bold">KNJIŽNO ODOBRENJE</option>
+                </select>
+                <div class="flex flex-col items-end mt-2 space-y-1 w-full">
+                    <div id="ref-wrapper" class="hidden w-full flex flex-col items-end mb-2 header-right-item">
+                        <span class="text-[9px] font-bold uppercase text-red-600">VEZA:</span>
+                        <input id="ref-input" list="ref-list" onchange="Invoice.handleRefSelect(this.value)" class="text-right font-mono font-bold text-xs w-32 outline-none" placeholder="Broj fakture">
+                        <datalist id="ref-list"></datalist>
+                    </div>
+                    <div class="header-right-item flex justify-between md:justify-end gap-2 items-center w-full">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">BROJ:</span>
+                        <input id="doc-num" class="text-right font-mono font-bold text-lg bg-slate-50 md:bg-transparent p-1 w-32">
+                    </div>
+                    <div class="header-right-item flex justify-between md:justify-end gap-2 items-center w-full">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">DATUM:</span>
+                        <input type="date" id="doc-date" class="text-right font-mono text-sm bg-slate-50 md:bg-transparent p-1">
+                    </div>
+                    <div class="header-right-item flex justify-between md:justify-end gap-2 items-center w-full">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">VALUTA:</span>
+                        <input type="date" id="doc-due" class="text-right font-mono text-sm bg-slate-50 md:bg-transparent p-1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50/30 p-3 rounded-lg border border-blue-100 mb-6">
+            <label class="text-[9px] font-black text-blue-400 uppercase mb-1 block no-print">KUPAC / PRIMALAC</label>
+            <div id="client-search-wrapper" class="relative no-print mb-2">
+                <input id="client-search" list="client-list" onchange="Invoice.selectClient(this.value)" class="inp w-full text-sm" placeholder="🔍 Pronađi klijenta...">
+                <datalist id="client-list"></datalist>
+            </div>
+            <div id="client-display">
+                <input id="c-name" class="font-bold text-lg w-full bg-transparent border-none placeholder-slate-400 p-0" placeholder="Naziv Kupca">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs mt-1">
+                    <input id="c-addr" class="w-full bg-transparent border-none p-0" placeholder="Adresa">
+                    <div class="flex gap-4"><input id="c-pib" class="w-32 bg-transparent border-none font-mono p-0" placeholder="PIB: -"><input id="c-mb" class="w-32 bg-transparent border-none font-mono p-0" placeholder="MB: -"></div>
+                </div>
+            </div>
+        </div>
+
+        <datalist id="art-list"></datalist>
+        <table class="w-full mb-6">
+            <thead class="bg-slate-100 text-[10px] font-black text-slate-600 uppercase table-header">
+                <tr><th class="p-2 text-left w-8">Br</th><th class="p-2 text-left">Opis / Naziv Dobra</th><th class="p-2 text-right w-16">Kol</th><th class="p-2 text-right w-24">Cena</th><th class="p-2 text-right w-24">Ukupno</th><th class="p-2 w-6 no-print"></th></tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+        </table>
+
+        <div id="add-buttons" class="flex gap-2 justify-center mb-8 border-b border-dashed border-slate-300 pb-8 no-print">
+            <button onclick="Invoice.addItem('prod')" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold uppercase shadow flex items-center gap-1"><span class="material-icons-round text-sm">add</span> Artikal</button>
+            <button onclick="Invoice.addItem('memo')" class="bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-xs font-bold uppercase shadow border border-slate-300 flex items-center gap-1"><span class="material-icons-round text-sm">notes</span> Napomena</button>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-start gap-8" id="print-header-row">
+            
+            <div class="w-full md:w-1/2 w-half-print text-xs text-slate-600">
+                <label class="font-bold text-[9px] uppercase block mb-1">Napomena / Klauzula:</label>
+                <textarea id="doc-note" oninput="document.getElementById('doc-note-print').innerText = this.value" class="w-full p-2 bg-slate-50 rounded border border-slate-200 h-24 text-xs resize-none no-print"></textarea>
+                <div id="doc-note-print" class="print-only auto-grow-text text-xs italic min-h-[50px]"></div>
+                
+                <div id="ips-container" class="hidden mt-4 pt-4 border-t border-dashed border-slate-300">
+                    <div class="text-right">
+                        <p class="font-bold text-[9px] uppercase mb-1 text-slate-500">NBS IPS - Skeniraj i plati</p>
+                        <div id="ips-qr" class="inline-block border p-1 bg-white"></div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 flex justify-between items-end gap-4">
+                    <div class="text-center w-32"><div class="border-b border-black h-8 mb-1"></div><span class="text-[9px] uppercase">Preuzeo</span></div>
+                    <div class="text-center w-32 relative"><img id="print-sign" src="" class="absolute bottom-3 left-0 right-0 mx-auto h-12 object-contain opacity-80 hidden"><div class="border-b border-black h-8 mb-1 relative z-10"></div><span class="text-[9px] uppercase">Izdalo lice</span></div>
+                </div>
+            </div>
+
+            <div class="w-full md:w-1/3 w-half-print bg-slate-50 p-3 rounded-xl border border-slate-200">
+                
+                <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-200">
+                    <span class="text-[10px] font-bold text-slate-400">VALUTA:</span>
+                    <div class="flex gap-2">
+                        <select id="doc-curr" onchange="Invoice.calcTotal()" class="text-xs font-bold bg-transparent"><option value="RSD">RSD</option><option value="EUR">EUR</option></select>
+                        <input id="doc-rate" onchange="Invoice.calcTotal()" type="number" class="w-16 text-right text-xs bg-white border rounded px-1" value="117.2" placeholder="Kurs">
+                    </div>
+                </div>
+
+                <div class="flex justify-between py-1 text-xs"><span>Osnovica:</span><span id="sum-net" class="font-mono">0.00</span></div>
+                <div class="flex justify-between py-1 text-xs text-slate-500"><span>PDV (20%):</span><span id="sum-pdv" class="font-mono">0.00</span></div>
+                
+                <div class="border-t border-slate-300 my-2 pt-2 flex justify-between text-lg font-black text-slate-800">
+                    <span>UKUPNO:</span><span id="sum-total">0.00 RSD</span>
+                </div>
+
+                <div id="rsd-total-wrapper" class="hidden border-t border-dashed border-slate-300 pt-1 mt-1 text-right bg-yellow-50 p-1 rounded">
+                    <p class="text-[9px] text-slate-500 font-bold">PROTIVVREDNOST U RSD:</p>
+                    <p id="sum-total-rsd" class="font-bold text-sm font-mono text-slate-800">0.00 RSD</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="Invoice.save()" class="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition z-50 no-print"><span class="material-icons-round text-3xl">save</span></button>
+
+    <script>
+        const Invoice = {
+            data: { items: [] }, config: {}, clients: [], articles: [], currentDocId: null,
+
+            init: () => {
+                Invoice.config = SINET.Config.load();
+                Invoice.populateHeader();
+                Invoice.clients = SINET.DB.get('clients') || [];
+                document.getElementById('client-list').innerHTML = Invoice.clients.map(c => `<option value="${c.osnovno.naziv} | PIB: ${c.osnovno.pib}">`).join('');
+                Invoice.articles = SINET.DB.get('articles') || [];
+                document.getElementById('art-list').innerHTML = Invoice.articles.map(a => `<option value="${a.name}">${a.price} RSD</option>`).join('');
+                
+                const docs = SINET.DB.get('docs') || [];
+                document.getElementById('docs-list').innerHTML = docs.map(d => { const icon = d.sef_status === 'SENT' ? '✅' : '🆕'; return `<option value="${d.num} | ${d.client.name} ${icon}">`; }).join('');
+
+                document.getElementById('doc-date').valueAsDate = new Date();
+                document.getElementById('doc-due').valueAsDate = new Date(Date.now() + 7*86400000);
+                Invoice.genNum();
+            },
+
+            // --- EMAIL SENDER (NOVO) ---
+            sendEmail: () => {
+                const clientName = document.getElementById('c-name').value;
+                if(!clientName) return alert("Prvo izaberite klijenta!");
+                
+                // 1. Nađi email klijenta u bazi
+                const client = Invoice.clients.find(c => c.osnovno.naziv === clientName);
+                const email = client ? (client.kontakt.email || "") : "";
+                
+                if(!email) {
+                    if(!confirm("Ovaj klijent nema upisan email u bazi. Da li želite da otvorite prazan mail?")) return;
+                }
+
+                // 2. Podaci za mail
+                const docNum = document.getElementById('doc-num').value;
+                const total = document.getElementById('sum-total').innerText;
+                const myFirm = Invoice.config.firma.naziv;
+                
+                const subject = encodeURIComponent(`Faktura ${docNum} - ${myFirm}`);
+                const body = encodeURIComponent(`Poštovani,\n\nU prilogu vam šaljemo fakturu br. ${docNum} u iznosu od ${total}.\n\nMolimo vas za uplatu u navedenom roku.\n\nSrdačan pozdrav,\n${myFirm}`);
+
+                // 3. Otvori mail klijent
+                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            },
+
+            selectArticle: (idx, val) => {
+                const a = Invoice.articles.find(x => x.name === val);
+                Invoice.data.items[idx].desc = val;
+                const stock = SINET.Stock.getQty(val);
+                console.log(`Lager za ${val}: ${stock}`);
+                document.getElementById(`print-desc-${idx}`).innerText = val;
+                if(a) { Invoice.data.items[idx].price = parseFloat(a.price); }
+                Invoice.updateRowDOM(idx);
+                Invoice.renderItems(); 
+            },
+
+            calcTotal: () => {
+                let netRSD = 0;
+                Invoice.data.items.forEach(i => { if(i.type !== 'memo') netRSD += (i.qty * i.price) });
+                const curr = document.getElementById('doc-curr').value;
+                const rate = parseFloat(document.getElementById('doc-rate').value) || 117.2;
+                let displayNet = netRSD; let displayTotal = netRSD * 1.2;
+                if (curr === 'EUR') { displayNet = netRSD / rate; displayTotal = displayNet * 1.2; }
+                document.getElementById('sum-net').innerText = SINET.Util.fmtMoney(displayNet, curr);
+                document.getElementById('sum-pdv').innerText = SINET.Util.fmtMoney(displayNet * 0.2, curr);
+                document.getElementById('sum-total').innerText = SINET.Util.fmtMoney(displayTotal, curr);
+                let finalRSD = netRSD * 1.2;
+                if (curr === 'EUR') { document.getElementById('rsd-total-wrapper').classList.remove('hidden'); document.getElementById('sum-total-rsd').innerText = SINET.Util.fmtMoney(finalRSD, 'RSD'); } else { document.getElementById('rsd-total-wrapper').classList.add('hidden'); }
+                Invoice.generateQR(finalRSD);
+            },
+
+            generateQR: (totalRSD) => {
+                const qrContainer = document.getElementById('ips-qr');
+                const ipsWrapper = document.getElementById('ips-container');
+                qrContainer.innerHTML = ""; 
+                if (totalRSD <= 0) { ipsWrapper.classList.add('hidden'); return; }
+                ipsWrapper.classList.remove('hidden');
+                const ipsString = SINET.FinTech.generateIPSString({
+                    total: totalRSD,
+                    account: Invoice.config.banka.racun1,
+                    recipient: Invoice.config.firma.naziv,
+                    docNum: document.getElementById('doc-num').value
+                });
+                new QRCode(qrContainer, { text: ipsString, width: 80, height: 80, colorDark : "#000", colorLight : "#fff", correctLevel : QRCode.CorrectLevel.M });
+            },
+
+            loadFromArchive: (val) => {
+                const docNum = val.split(' |')[0];
+                const docs = SINET.DB.get('docs') || [];
+                const doc = docs.find(d => d.num === docNum);
+                if(!doc) return;
+                if(confirm("Učitati fakturu " + docNum + "?")) {
+                    Invoice.currentDocId = doc.id;
+                    document.getElementById('doc-type').value = doc.type || 'FAKTURA';
+                    document.getElementById('doc-num').value = doc.num;
+                    document.getElementById('doc-date').value = doc.date;
+                    document.getElementById('c-name').value = doc.client.name;
+                    document.getElementById('c-pib').value = "PIB: " + (doc.client.pib || '');
+                    const clientData = Invoice.clients.find(c => c.osnovno.naziv === doc.client.name);
+                    if(clientData) { document.getElementById('c-addr').value = clientData.kontakt.adresa; document.getElementById('c-mb').value = "MB: " + clientData.osnovno.mb; }
+                    Invoice.data.items = (doc.items || []).map(i => ({ type: i.type || 'prod', desc: i.desc || '', qty: parseFloat(i.qty) || 0, price: parseFloat(i.price) || 0 }));
+                    Invoice.renderItems();
+                    if(doc.meta && doc.meta.currency) document.getElementById('doc-curr').value = doc.meta.currency;
+                    Invoice.calcTotal();
+                    if(doc.meta) {
+                        document.getElementById('doc-due').value = doc.meta.due || '';
+                        document.getElementById('doc-note').value = doc.meta.note || '';
+                        document.getElementById('doc-note-print').innerText = doc.meta.note || '';
+                        if(doc.meta.ref) { document.getElementById('ref-input').value = doc.meta.ref; document.getElementById('ref-wrapper').classList.remove('hidden'); }
+                    }
+                    const btn = document.getElementById('btn-sef');
+                    if(doc.sef_status === 'SENT') { btn.className = "bg-green-600 text-white px-3 py-1 rounded text-xs uppercase font-bold border border-green-500 flex items-center gap-1"; btn.innerHTML = '<span class="material-icons-round text-sm">check_circle</span> POSLATO'; } else { btn.className = "bg-blue-700 text-white px-3 py-1 rounded text-xs uppercase font-bold border border-blue-500 hover:bg-blue-600 flex items-center gap-1"; btn.innerHTML = '<span class="material-icons-round text-sm">code</span> SEF XML'; }
+                }
+                document.querySelector('#archive-search input').value = '';
+            },
+            exportXML: () => { if(!document.getElementById('c-name').value) return alert("Nema podataka!"); const doc={num:document.getElementById('doc-num').value,date:document.getElementById('doc-date').value,client:{name:document.getElementById('c-name').value,pib:document.getElementById('c-pib').value.replace(/[^0-9]/g,"")},total_net:document.getElementById('sum-net').innerText,items:Invoice.data.items,meta:{due:document.getElementById('doc-due').value}}; const xmlContent=SINET.SEF.generateXML(doc,Invoice.config); if(xmlContent){SINET.SEF.download(`SEF_${doc.num}.xml`,xmlContent); if(Invoice.currentDocId){SINET.DB.markAsExported(Invoice.currentDocId); alert("✅ XML generisan!"); location.reload();}}},
+            populateHeader: () => { const c = Invoice.config; document.getElementById('lbl-naziv').innerText=c.firma.naziv; document.getElementById('lbl-adresa').innerText=`${c.adresa.ulica}, ${c.adresa.mesto}`; document.getElementById('lbl-pib').innerText=c.firma.pib; document.getElementById('lbl-mb').innerText=c.firma.mb; document.getElementById('lbl-racun').innerText=c.banka.racun1; const note=c.banka.footer_text||""; document.getElementById('doc-note').value=note; document.getElementById('doc-note-print').innerText=note; if(c.vizual.logo){ document.getElementById('print-logo').src=c.vizual.logo; document.getElementById('print-logo').classList.remove('hidden'); } if(c.vizual.potpis){ document.getElementById('print-sign').src=c.vizual.potpis; document.getElementById('print-sign').classList.remove('hidden'); } },
+            genNum: () => { const type=document.getElementById('doc-type').value; const cnt=(SINET.DB.get('docs')||[]).filter(d=>d.type===type && d.date.startsWith(new Date().getFullYear())).length+1; document.getElementById('doc-num').value=`${new Date().getFullYear()}-${String(cnt).padStart(3,'0')}`; },
+            selectClient: (val) => { const c=Invoice.clients.find(x=>x.osnovno.naziv===val.split(' |')[0]); if(c){ document.getElementById('c-name').value=c.osnovno.naziv; document.getElementById('c-addr').value=c.kontakt.adresa; document.getElementById('c-pib').value="PIB: "+c.osnovno.pib; document.getElementById('c-mb').value="MB: "+c.osnovno.mb; } document.getElementById('client-search').value=""; },
+            toggleRef: () => { const type=document.getElementById('doc-type').value; const ref=document.getElementById('ref-wrapper'); const note=document.getElementById('doc-note'); const refList=document.getElementById('ref-list'); if(type==='KNJIŽNO ODOBRENJE'){ ref.classList.remove('hidden'); note.placeholder="Razlog odobrenja..."; const invoices=(SINET.DB.get('docs')||[]).filter(d=>d.type==='FAKTURA'); refList.innerHTML=invoices.map(inv=>`<option value="${inv.num} | ${inv.client.name} | ${inv.total}">`).join(''); }else{ ref.classList.add('hidden'); note.placeholder="Rok plaćanja..."; } Invoice.genNum(); },
+            handleRefSelect: (val) => { const parts=val.split(' | '); if(parts.length>1) Invoice.selectClient(parts[1]+" | "); },
+            print: () => { const type=document.getElementById('doc-type').value.replace(/ /g,'_'); const num=document.getElementById('doc-num').value; const date=document.getElementById('doc-date').value; const oldTitle=document.title; document.title=`${type}_${num}_${date}`; window.print(); setTimeout(()=>document.title=oldTitle,1000); },
+            addItem: (type) => { Invoice.data.items.push({type,desc:"",qty:1,price:0}); Invoice.renderItems(); },
+            removeItem: (i) => { Invoice.data.items.splice(i,1); Invoice.renderItems(); },
+            handleInput: (i,f,v) => { Invoice.data.items[i][f]=v; document.getElementById(`print-${f}-${i}`).innerText=v; },
+            handleCalc: (i,f,v) => { Invoice.data.items[i][f]=parseFloat(v); Invoice.updateRowDOM(i); Invoice.calcTotal(); },
+            updateRowDOM: (i) => { const it=Invoice.data.items[i]; document.getElementById(`row-total-${i}`).innerText=SINET.Util.fmtMoney(it.qty*it.price); document.getElementById(`price-${i}`).value=it.price; },
+            renderItems: () => { 
+                const tb = document.getElementById('items-body'); 
+                tb.innerHTML = Invoice.data.items.map((it,i) => { 
+                    if(it.type === 'memo') return `<tr class="border-b"><td class="p-2 text-[10px] font-mono pt-3">${i+1}</td><td colspan="4" class="p-1"><textarea oninput="Invoice.handleInput(${i},'desc',this.value)" class="w-full bg-yellow-50 p-2 italic text-xs rounded h-10 no-print">${it.desc}</textarea><div id="print-desc-${i}" class="print-only auto-grow-text text-xs italic">${it.desc}</div></td><td class="p-2 text-center no-print"><button onclick="Invoice.removeItem(${i})" class="text-red-400 btn-icon">✕</button></td></tr>`; 
+                    const rowTot = it.qty * it.price; 
+                    const stock = SINET.Stock.getQty(it.desc);
+                    const stockInfo = it.desc ? `(Lager: ${stock})` : '';
+                    const stockClass = stock <= 0 ? 'text-red-500' : 'text-emerald-600';
+                    return `<tr class="border-b"><td class="p-2 text-[10px] font-mono pt-3">${i+1}</td><td class="p-1"><input list="art-list" value="${it.desc}" oninput="Invoice.handleInput(${i},'desc',this.value)" onchange="Invoice.selectArticle(${i},this.value)" class="w-full font-bold bg-transparent text-xs p-2 no-print" placeholder="Artikal..."><span class="text-[9px] ${stockClass} no-print ml-2 font-bold">${stockInfo}</span><div id="print-desc-${i}" class="print-only auto-grow-text text-xs font-bold pt-2">${it.desc}</div></td><td class="p-1"><input type="number" value="${it.qty}" onchange="Invoice.handleCalc(${i},'qty',this.value)" class="w-full text-right bg-slate-50 p-2 rounded text-xs"></td><td class="p-1"><input type="number" id="price-${i}" value="${it.price}" onchange="Invoice.handleCalc(${i},'price',this.value)" class="w-full text-right bg-slate-50 p-2 rounded text-xs"></td><td class="p-2 text-right font-mono font-bold text-xs pt-3" id="row-total-${i}">${SINET.Util.fmtMoney(rowTot)}</td><td class="p-2 text-center no-print"><button onclick="Invoice.removeItem(${i})" class="text-red-400 btn-icon">✕</button></td></tr>`; 
+                }).join(''); 
+                Invoice.calcTotal(); 
+            },
+            save: () => { if(!document.getElementById('c-name').value) return alert("Kupac!"); const doc={ id:Invoice.currentDocId||SINET.Util.uuid(), type:document.getElementById('doc-type').value, num:document.getElementById('doc-num').value, date:document.getElementById('doc-date').value, client:{name:document.getElementById('c-name').value,pib:document.getElementById('c-pib').value}, total:document.getElementById('sum-total').innerText, items:Invoice.data.items, meta:{ref:document.getElementById('ref-input').value, due:document.getElementById('doc-due').value, note:document.getElementById('doc-note').value, currency:document.getElementById('doc-curr').value} }; const docs=SINET.DB.get('docs')||[]; const idx = docs.findIndex(d => d.id === doc.id); if(idx > -1) docs[idx] = doc; else docs.unshift(doc); SINET.DB.save('docs',docs); if(confirm("Sačuvano! Štampaj?")) window.print(); else window.location.href="index.html"; },
+            reset: () => confirm("Obrisati?") && location.reload()
+        };
+        Invoice.init();
+    </script>
+</body>
+</html>
