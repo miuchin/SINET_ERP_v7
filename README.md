@@ -6,7 +6,7 @@
 
 **SINET ERP** je besplatan, moderan i munjevito brz poslovni sistem koji radi direktno u vašem pretraživaču (browseru). Nema servera, nema pretplate, nema instalacije. Vaši podaci su samo vaši.
 
-🔗 **[ISPROBAJ ODMAH (LIVE DEMO)](https://tvoj-netlify-link.app)**
+🔗 **[ISPROBAJ ODMAH (LIVE DEMO)](https://sineterpv7.netlify.app/)**
 
 ---
 
